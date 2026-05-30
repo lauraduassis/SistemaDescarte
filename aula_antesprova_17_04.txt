@@ -1,0 +1,24 @@
+main(String [],args)
+(String args [])
+
+String[] A1, A2;---> tudo que vier depoisvai se um vetor
+String A1[],  A2;
+String A1[], A2[];
+String A1, A2;
+
+
+pode delcarar e inicializar
+ou pode declara sem o new, colocando os valores que eu quero
+
+int vetor1[] = new int[4];
+int vetor2[] = new int [6];
+
+ficar de olho no nome das variaveis
+
+quando inicializa o primeiro inicializa com 0 se for int
+
+e se for String começa com o nulo.
+JoptionPAne é usado para deixar uma janelinha e mais bonito.'
+
+
+for it nao tem posição
