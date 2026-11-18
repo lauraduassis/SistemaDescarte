@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:watch": "vite build --mode recarga-local --watch",
     "build": "vite build"
   },
   "dependencies": {

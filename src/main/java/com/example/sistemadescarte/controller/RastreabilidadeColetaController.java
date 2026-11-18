@@ -35,6 +35,11 @@ public class RastreabilidadeColetaController {
         }
     }
 
+    @GetMapping("/quantidade-solicitada")
+    public ResponseEntity<Double> quantidadeSolicitada(@RequestParam int produtoId) {
+        return ResponseEntity.of(service.consultarQuantidadeSolicitada(produtoId));
+    }
+
     @GetMapping("/historico")
     public ResponseEntity<?> historico(@RequestParam String patrimonio) {
         try {

@@ -167,6 +167,7 @@
         </span>
     </button>
 </th>
+                                    <th scope="col">Quantidade</th>
                                     <th th:if="${permissao != 'ANALISTA'}">Ações</th>
                                 </tr>
                             </thead>
@@ -175,29 +176,29 @@
 
                                                                 <tr th:each="item : ${movimentacoes}"
     data-paginacao-item
-    data-tipo="DESCARTE"
-    th:attr="data-data=${item.notaDescarte.dataHora}">
-                                    <td th:text="${#temporals.format(item.notaDescarte.dataHora, 'dd/MM/yyyy HH:mm')}">
+    th:attr="data-tipo=${item.tipo},data-data=${item.dataHora}">
+                                    <td th:text="${item.dataHora == null ? '—' : #temporals.format(item.dataHora, 'dd/MM/yyyy HH:mm')}">
                                         14/11/2026 11:54
                                     </td>
 
-                                    <td>Descarte</td>
+                                    <td th:text="${item.rotulo}">Descarte</td>
 
                                     <td>
-                                        <strong th:text="${item.produto.descricao}">Produto</strong>
-                                        <span th:text="${item.produto.patrimonio}">Patrimônio</span>
+                                        <strong th:text="${item.descricao}">Produto</strong>
+                                        <span th:text="${item.patrimonio}">Patrimônio</span>
                                     </td>
 
-                                    <td>Não informado</td>
+                                    <td th:text="${#strings.isEmpty(item.responsavel) ? 'Não informado' : item.responsavel}">Não informado</td>
 
-                                    <td th:text="${item.notaDescarte.motivo}">
+                                    <td th:text="${item.observacao}">
                                         Motivo do descarte
                                     </td>
 
+                                    <td th:text="${item.quantidade == null ? '—' : item.quantidade.stripTrailingZeros().toPlainString()}">—</td>
                                     <td th:if="${permissao != 'ANALISTA'}">
     <div class="products-actions" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
         <a class="movement-view-button"
-           th:href="@{/produtos/{id}/visualizar(id=${item.produto.id})}">
+           th:href="@{/produtos/{id}/visualizar(id=${item.produtoId})}">
 <svg xmlns="http://www.w3.org/2000/svg"
      width="15" height="15"
      viewBox="0 0 24 24"
@@ -212,8 +213,8 @@
 </svg>
 Visualizar
 </a>
-        <a class="movement-pdf-button"
-           th:href="@{/descartes/movimentacoes/{id}/relatorio.pdf(id=${item.id})}"
+        <a class="movement-pdf-button" th:if="${item.descarteId != null}"
+           th:href="@{/descartes/movimentacoes/{id}/relatorio.pdf(id=${item.descarteId})}"
            target="_blank" rel="noopener"
            >
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
@@ -231,7 +232,7 @@ Visualizar
                                 <tr class="empty-row history-filter-empty"
     th:if="${!#lists.isEmpty(movimentacoes)}"
     style="display: none;">
-    <td th:colspan="${permissao == 'ANALISTA' ? 5 : 6}">
+    <td th:colspan="${permissao == 'ANALISTA' ? 6 : 7}">
         <div class="empty-state">
             <strong>Nenhum resultado encontrado</strong>
             <span>
@@ -241,7 +242,7 @@ Visualizar
     </td>
 </tr>
 <tr class="empty-row" th:if="${#lists.isEmpty(movimentacoes)}">
-                                    <td th:colspan="${permissao == 'ANALISTA' ? 5 : 6}">
+                                    <td th:colspan="${permissao == 'ANALISTA' ? 6 : 7}">
 
                                         <div class="empty-state">
 

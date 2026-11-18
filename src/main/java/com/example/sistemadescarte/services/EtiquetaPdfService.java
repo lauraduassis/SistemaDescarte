@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.example.sistemadescarte.entities.ProdutoEntity;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.oned.Code128Writer;
 import com.google.zxing.oned.EAN13Writer;
 
 @Service
@@ -194,7 +195,7 @@ public class EtiquetaPdfService {
             tamanho
         );
         conteudo.newLineAtOffset(x, y);
-        conteudo.showText(texto);
+        conteudo.showText(texto == null ? "" : texto);
         conteudo.endText();
     }
 
@@ -206,12 +207,11 @@ public class EtiquetaPdfService {
             float largura,
             float altura) throws Exception {
 
-        BitMatrix matriz = new EAN13Writer().encode(
-            codigo,
-            BarcodeFormat.EAN_13,
-            95,
-            1
-        );
+        if (codigo == null || codigo.isBlank()) {
+            return;
+        }
+
+        BitMatrix matriz = codificarBarras(codigo);
 
         float larguraBarra = largura / matriz.getWidth();
 
@@ -227,6 +227,18 @@ public class EtiquetaPdfService {
         }
 
         conteudo.fill();
+    }
+
+    private BitMatrix codificarBarras(String codigo) {
+        if (codigo.matches("[0-9]{13}")) {
+            try {
+                return new EAN13Writer().encode(codigo, BarcodeFormat.EAN_13, 95, 1);
+            } catch (IllegalArgumentException codigoEanInvalido) {
+                // Code 128 conserva o valor original se o dígito verificador for inválido.
+            }
+        }
+
+        return new Code128Writer().encode(codigo, BarcodeFormat.CODE_128, 95, 1);
     }
 }
 

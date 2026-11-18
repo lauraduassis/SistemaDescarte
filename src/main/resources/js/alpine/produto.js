@@ -2,6 +2,7 @@ export default function produto() {
     return {
         salvando: false,
         id: null,
+        quantidade: "",
 
         form: {
             patrimonio: "",
@@ -20,6 +21,7 @@ export default function produto() {
             }
 
             this.id = Number(dados.dataset.id);
+            this.quantidade = Number(dados.dataset.quantidade) || "";
             this.form.patrimonio = dados.dataset.patrimonio || "";
             this.form.descricao = dados.dataset.descricao || "";
             this.form.categoria = dados.dataset.categoria || "";
@@ -98,7 +100,8 @@ export default function produto() {
                 const url = editando ? `/produtos/${this.id}` : "/produtos";
                 const metodo = editando ? "PUT" : "POST";
 
-                const resposta = await fetch(url, {
+                const parametros = new URLSearchParams({ quantidade: this.quantidade });
+                const resposta = await fetch(`${url}?${parametros}`, {
                     method: metodo,
                     headers: this.obterHeaders(),
                     body: JSON.stringify(this.form)

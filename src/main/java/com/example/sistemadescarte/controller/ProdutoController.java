@@ -35,9 +35,9 @@ public class ProdutoController {
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizar(
             @PathVariable int id,
-            @RequestBody ProdutoEntity produto) {
+            @RequestBody ProdutoEntity produto, @RequestParam int quantidade) {
         try {
-            ProdutoEntity produtoAtualizado = produtoService.atualizar(id, produto);
+            ProdutoEntity produtoAtualizado = produtoService.atualizar(id, produto, quantidade);
             return ResponseEntity.ok(produtoAtualizado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(
@@ -47,9 +47,9 @@ public class ProdutoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> incluir(@RequestBody ProdutoEntity produto) {
+    public ResponseEntity<?> incluir(@RequestBody ProdutoEntity produto, @RequestParam int quantidade) {
         try {
-            ProdutoEntity novoProduto = produtoService.incluir(produto);
+            ProdutoEntity novoProduto = produtoService.incluir(produto, quantidade);
 
             return new ResponseEntity<>(
                 novoProduto,

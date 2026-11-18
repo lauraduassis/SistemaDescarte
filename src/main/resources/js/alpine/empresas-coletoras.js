@@ -21,6 +21,30 @@ export default function empresasColetoras() {
             });
         },
         normalizar(texto) { return String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); },
+        formatarTelefone(valor) {
+            const digitos = String(valor || "").replace(/\D/g, "");
+            if (digitos.length <= 2 || digitos.length > 11) return digitos;
+            const fimPrefixo = digitos.length === 11 ? 7 : 6;
+            const prefixo = '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, fimPrefixo);
+            return digitos.length > fimPrefixo ? prefixo + '-' + digitos.slice(fimPrefixo) : prefixo;
+        },
+        mascararTelefone(evento) {
+            const campo = evento.target;
+            const valor = campo.value;
+            const formatado = this.formatarTelefone(valor);
+            this.form.telefone = formatado;
+            if (formatado === valor) return;
+
+            const digitosAntes = valor.slice(0, campo.selectionStart).replace(/\D/g, "").length;
+            campo.value = formatado;
+            let cursor = 0;
+            let digitos = 0;
+            while (cursor < formatado.length && digitos < digitosAntes) {
+                if (/\d/.test(formatado[cursor])) digitos++;
+                cursor++;
+            }
+            campo.setSelectionRange(cursor, cursor);
+        },
         headers() {
             const h = { "Content-Type": "application/json" };
             const token = document.querySelector('meta[name="_csrf"]')?.content;
@@ -44,7 +68,7 @@ export default function empresasColetoras() {
         editar(empresa) {
             this.editandoId = empresa.id;
             this.form = { nomeFantasia: empresa.nomeFantasia || "", responsavelColeta: empresa.responsavelColeta || "",
-                          telefone: empresa.telefone || "", email: empresa.email || "", ativo: !!empresa.ativo };
+                          telefone: this.formatarTelefone(empresa.telefone), email: empresa.email || "", ativo: !!empresa.ativo };
             document.getElementById("empresaNome")?.focus();
             document.getElementById("empresaNome")?.scrollIntoView({ behavior: "smooth", block: "center" });
         },

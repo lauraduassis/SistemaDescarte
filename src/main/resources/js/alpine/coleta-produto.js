@@ -17,7 +17,7 @@ export default function coletaProduto() {
                 if (token && nome) headers[nome] = token;
                 const dados = await confirmarColetaComEmpresa(id, headers);
                 if (!dados) return;
-                this.$store.alert.sucesso(`Produto coletado por ${dados.empresaColetora}. Retirada ${dados.retiradaId}.`);
+                this.$store.alert.sucesso(`Coleta registrada. Saldo restante: ${dados.saldoRestante}.`);
                 window.location.reload();
             } catch (erro) {
                 this.$store.alert.erro(erro.message || "Nao foi possivel registrar a coleta.");

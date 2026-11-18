@@ -63,9 +63,24 @@ Alpine.data("selectPremium", selectPremium);
 
 Alpine.start();
 
-
-
-
-
-
-
+if (import.meta.env.MODE === "recarga-local") {
+    const versao = new URL("./versao-frontend.txt", window.location.origin + "/js/");
+    let anterior;
+    async function conferirVersao() {
+        try {
+            const resposta = await fetch(versao, { cache: "no-store" });
+            if (resposta.ok && !resposta.redirected) {
+                const atual = await resposta.text();
+                if (anterior && atual !== anterior) {
+                    window.location.reload();
+                    return;
+                }
+                anterior = atual;
+            }
+        } catch {
+            // O servidor local pode ficar indisponível enquanto reinicia.
+        }
+        window.setTimeout(conferirVersao, 1000);
+    }
+    void conferirVersao();
+}

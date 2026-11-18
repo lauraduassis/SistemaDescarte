@@ -205,7 +205,6 @@
                         <th>Última alteração</th>
                         <th>Entradas</th>
                         <th>Retiradas</th>
-                        <th>Descartes</th>
                         <th>Saldo</th>
                         <th>Ações</th>
 
@@ -237,7 +236,6 @@
 
                         <td th:text="${estoque != null ? estoque.entradas() : '—'}">—</td>
                         <td th:text="${estoque != null ? estoque.retiradas() : '—'}">—</td>
-                        <td th:text="${estoque != null ? estoque.descartes() : '—'}">—</td>
                         <td th:text="${estoque != null ? estoque.saldo() : '—'}">—</td>
 
                         <td>
@@ -307,7 +305,7 @@ Excluir
 
                     <tr class="empty-row history-filter-empty"
                         style="display: none;">
-                        <td colspan="11">
+                        <td colspan="10">
 
                             <div class="empty-state">
 

@@ -54,7 +54,7 @@ export default function selectPremium() {
 
                 item.type = "button";
                 item.className = "select-premium-option";
-                item.textContent = opcao.textContent;
+                item.textContent = opcao.label;
                 item.dataset.value = opcao.value;
                 item.setAttribute("role", "option");
 
@@ -124,13 +124,19 @@ export default function selectPremium() {
                 this.atualizarVisual();
             });
             this.observadorOpcoes = new MutationObserver(() => {
+                const desativado = this.select.disabled;
+                this.botao.disabled = desativado;
+                this.botao.setAttribute("aria-disabled", String(desativado));
+                if (desativado && this.aberto) this.fechar();
                 this.sincronizarOpcoesDinamicas();
             });
 
             this.observadorOpcoes.observe(this.select, {
                 childList: true,
                 subtree: true,
-                characterData: true
+                characterData: true,
+                attributes: true,
+                attributeFilter: ["disabled"]
             });
 
 
@@ -146,7 +152,7 @@ export default function selectPremium() {
                 novasOpcoes.length !== this.opcoes.length ||
                 novasOpcoes.some((opcao, indice) =>
                     opcao.value !== this.opcoes[indice]?.value ||
-                    opcao.textContent !== this.opcoes[indice]?.textContent ||
+                    opcao.label !== this.menu.children[indice]?.textContent ||
                     opcao !== this.opcoes[indice]
                 );
 
@@ -163,7 +169,7 @@ export default function selectPremium() {
 
                 item.type = "button";
                 item.className = "select-premium-option";
-                item.textContent = opcao.textContent;
+                item.textContent = opcao.label;
                 item.dataset.value = opcao.value;
                 item.setAttribute("role", "option");
 
@@ -181,7 +187,7 @@ export default function selectPremium() {
 
             const selecionada = this.select.selectedOptions[0];
 
-            this.botao.textContent = selecionada?.textContent || "";
+            this.botao.textContent = this.select.dataset.rotuloSelecionado || selecionada?.label || "";
 
             const seta = document.createElement("span");
             seta.className = "select-premium-chevron";

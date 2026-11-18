@@ -113,11 +113,11 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Código EAN-13</label>
+                                <label>Código de barras</label>
 
                                 <div
-                                    class="barcode-container" th:x-data="|codigoBarras('${produto.codigoBarras}')|"
-                                    x-init="init()"
+                                    class="barcode-container" x-data="codigoBarras"
+                                    th:data-codigo="${produto.codigoBarras}"
                                 >
                                     <svg x-ref="barcode"></svg>
                                     <span class="barcode-number" th:text="${produto.codigoBarras}"></span>

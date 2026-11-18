@@ -8,14 +8,26 @@
     <title>Efetuar Descarte | Sistema de Descarte</title>
 
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <script type="module" th:src="@{/js/app.js}"></script>
+    <script type="module" th:src="@{/js/app.js(v='descarte-campos-6')}"></script>
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
 
     
 <style>
+.form-panel.descarte-form-panel {
+  overflow: visible;
+}
+
+.descarte-form-footer {
+  padding: 20px 24px 24px;
+}
+.descarte-form-footer button:is(.button-cancel, .button-save) {
+  border-radius: 8px;
+}
+
 /* layout-descarte-2x2 */
 @media (min-width: 768px) {
+  .descarte-form-footer { padding-inline: 32px; }
   .form-grid:has(> .form-group #produto) {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -28,7 +40,7 @@
   .form-grid:has(> .form-group #produto) > .form-group:has(#produto) { order: 1; }
   .form-grid:has(> .form-group #produto) > .form-group:has(#categoria) { order: 2; }
   .form-grid:has(> .form-group #produto) > .form-group:has(#statusAtual) { order: 3; }
-  .form-grid:has(> .form-group #produto) > .form-group:has(#empresaColetoraSelect) { order: 4; }
+  .form-grid:has(> .form-group #produto) > .form-group:has(#motivo) { order: 4; }
 }
 </style>
 </head>
@@ -58,9 +70,9 @@
                     </div>
                 </section>
 
-                <section class="form-panel">
+                <section class="form-panel descarte-form-panel">
 
-                    <form @submit.prevent="registrarDescarte()">
+                    <form @submit.prevent="confirmarSolicitacao()">
 
                         <div class="form-section">
 
@@ -167,22 +179,6 @@ Ler código</button>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="empresaColetoraSelect">Empresa responsavel pela coleta</label>
-                                    <div class="select-premium-field" x-data="selectPremium">
-<select id="empresaColetoraSelect" x-ref="empresaColetoraSelect"
-                                            x-model="empresaColetoraId"
-                                            class="select-premium w-full rounded-lg border border-slate-300 px-3 py-2"
-                                            aria-label="Empresa responsavel pela coleta">
-                                        <option value="">Selecione a empresa coletora</option>
-                                        <template x-for="empresa in empresasColetoras" :key="empresa.id">
-                                            <option :value="empresa.id" x-text="empresa.nomeFantasia"></option>
-                                        </template>
-                                    </select>
-</div>
-                                    <small class="text-slate-500">Obrigatorio ao confirmar a coleta; nao e necessario na solicitacao inicial.</small>
-                                </div>
-
-                                <div class="form-group">
                                     <label for="statusAtual">
                                         Status atual
                                     </label>
@@ -197,7 +193,7 @@ Ler código</button>
 
         <option value="">Nenhum equipamento selecionado</option>
         <option value="PENDENTE">Pendente</option>
-        <option value="AGUARDANDO_COLETA">Aguardando coleta</option>
+        <option value="AGUARDANDO_COLETA" label="Aguardando coleta">Aguardando coleta</option>
         <option value="COLETADO">Coletado</option>
 
     </select>
@@ -205,11 +201,25 @@ Ler código</button>
 </div>
                                 </div>
 
+                                <div class="form-group">
+                                    <label for="motivo">
+                                        Motivo do descarte (obrigatório)
+                                    </label>
+
+                                    <input type="text"
+                                        id="motivo"
+                                        name="motivo"
+                                        x-model="motivo"
+                                        required
+                                        placeholder="Informe o motivo do descarte..."
+                                    >
+                                </div>
+
                             </div>
 
                         </div>
 
-                        <div class="form-section">
+                        <div class="form-section" x-show="mostrarInformacoesDescarte" x-cloak>
 
                             <div class="form-section-title">
                                 <span>03</span>
@@ -223,23 +233,60 @@ Ler código</button>
                             <div class="form-grid">
 
 
-                                <div class="form-group form-group-full">
-                                    <label for="motivo">
-                                        Motivo do descarte (obrigatório)
-                                    </label>
-
-                                    <textarea
-                                        id="motivo"
-                                        name="motivo"
-                                        rows="5"
-                                        x-model="motivo"
-                                        required
-                                        placeholder="Informe o motivo do descarte..."
-                                    ></textarea>
+                                <div class="form-group">
+                                    <label for="quantidade-coleta">Quantidade de retirada</label>
+                                    <input type="number" id="quantidade-coleta" :value="quantidadeRetirada" readonly>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="empresaColetoraSelect">Empresa responsavel pela coleta</label>
+                                    <div class="select-premium-field" x-data="selectPremium">
+<select id="empresaColetoraSelect" x-ref="empresaColetoraSelect"
+                                            x-model="empresaColetoraId"
+                                            disabled :disabled="empresaBloqueada"
+                                            class="select-premium w-full rounded-lg border border-slate-300 px-3 py-2"
+                                            aria-label="Empresa responsavel pela coleta">
+                                        <option value="">Selecione a empresa coletora</option>
+                                        <template x-for="empresa in empresasColetoras" :key="empresa.id">
+                                            <option :value="empresa.id" x-text="empresa.nomeFantasia"></option>
+                                        </template>
+                                    </select>
+</div>
+                                </div>
+
 
                             </div>
 
+                        </div>
+
+                        <div class="form-footer descarte-form-footer" x-show="coletaEmEdicao || solicitacaoEmEdicao" x-cloak>
+                            <div class="products-actions flex-wrap">
+                                <button type="button" class="button-cancel gap-2 disabled:opacity-50"
+                                        @click="cancelarAcaoDescarte()" :disabled="salvando || processandoColeta">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                        <path d="m6 6 12 12M18 6 6 18"/>
+                                    </svg>
+                                    Cancelar
+                                </button>
+                                <button type="button" class="button-save gap-2 disabled:opacity-50"
+                                        x-show="coletaEmEdicao" @click="solicitarConfirmacaoColeta()"
+                                        :disabled="processandoColeta || confirmacaoColetaAberta">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m5 12 4 4L19 6"/>
+                                    </svg>
+                                    Confirmar coleta
+                                </button>
+                                <button type="submit" class="button-save gap-2 disabled:opacity-50"
+                                        x-show="solicitacaoEmEdicao" :disabled="salvando">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m5 12 4 4L19 6"/>
+                                    </svg>
+                                    Registrar solicitação
+                                </button>
+                            </div>
                         </div>
 
                     </form>

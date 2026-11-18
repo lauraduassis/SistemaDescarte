@@ -35,11 +35,11 @@
                         </div>
                         <div class="flex flex-col gap-2">
                             <label for="empresaTelefone">Telefone</label>
-                            <input id="empresaTelefone" type="tel" x-model="form.telefone" maxlength="20" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="(17) 99999-9999">
+                            <input id="empresaTelefone" type="tel" inputmode="numeric" autocomplete="tel-national" :value="form.telefone" @input="mascararTelefone" pattern="\([1-9][0-9]\) [0-9]{4,5}-[0-9]{4}" title="Informe o DDD e um telefone com 10 ou 11 dígitos." required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="(17) 99999-9999">
                         </div>
                         <div class="flex flex-col gap-2">
                             <label for="empresaEmail">E-mail</label>
-                            <input id="empresaEmail" type="email" x-model="form.email" maxlength="150" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="empresa@exemplo.com">
+                            <input id="empresaEmail" type="email" autocomplete="email" x-model.trim="form.email" maxlength="150" pattern="[^@\s]+@[a-zA-Z0-9]+(?:[\x2D]+[a-zA-Z0-9]+)*(?:\.[a-zA-Z0-9]+(?:[\x2D]+[a-zA-Z0-9]+)*)+" title="Informe um e-mail no formato empresa@exemplo.com." required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="empresa@exemplo.com">
                         </div>
                     </div>
                     <div class="mt-6 flex items-center gap-3">

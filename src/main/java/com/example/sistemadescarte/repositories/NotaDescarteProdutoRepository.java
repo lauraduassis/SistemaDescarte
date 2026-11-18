@@ -8,6 +8,8 @@ import com.example.sistemadescarte.entities.NotaDescarteProduto;
 
 public interface NotaDescarteProdutoRepository extends JpaRepository<NotaDescarteProduto, Integer> {
 
+    java.util.Optional<NotaDescarteProduto> findFirstByProduto_IdOrderByIdDesc(int produtoId);
+
     @Query("""
         SELECT ndp
         FROM NotaDescarteProduto ndp

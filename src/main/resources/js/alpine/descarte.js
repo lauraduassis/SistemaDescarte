@@ -6,6 +6,10 @@ export default function descarte() {
         produto: null,
         sincronizandoStatus: false,
         motivo: "",
+        solicitacaoEmEdicao: false,
+        aguardandoColetaSelecionado: false,
+        coletaEmEdicao: false,
+        quantidadeRetirada: "",
         empresasColetoras: [],
         empresaColetoraId: "",
         erro: "",
@@ -14,6 +18,14 @@ export default function descarte() {
         processandoColeta: false,
         mostrarBaixaAnterior: false,
         confirmacaoColetaAberta: false,
+
+        get mostrarInformacoesDescarte() {
+            return this.coletaEmEdicao || this.produto?.status === "COLETADO";
+        },
+
+        get empresaBloqueada() {
+            return !this.coletaEmEdicao || this.produto?.status !== "AGUARDANDO_COLETA" || this.processandoColeta;
+        },
 
         init() {
             void this.carregarEmpresasColetoras();
@@ -85,16 +97,7 @@ export default function descarte() {
                     this.$nextTick(() => this.$refs.campoCodigoDescarte?.focus());
                     return;
                 }
-                if (!this.empresaColetoraValida()) return;
-                this.confirmacaoColetaAberta = true;
-                window.dispatchEvent(new CustomEvent("abrir-confirmacao", {
-                    detail: {
-                        titulo: "Confirmar coleta",
-                        mensagem: `Marcar ${dados.descricao || "o equipamento"} (patrimonio ${dados.patrimonio || "nao informado"}) como coletado?`,
-                        textoConfirmar: "Confirmar coleta",
-                        acao: () => this.confirmarColetaPorLeitura(dados.id)
-                    }
-                }));
+                this.iniciarColeta();
             } finally {
                 this.consultandoColeta = false;
             }
@@ -104,7 +107,7 @@ export default function descarte() {
             const campo = document.getElementById("statusAtual");
             if (!campo) return;
 
-            const status = String(this.produto?.status || "")
+            const status = (this.coletaEmEdicao ? "COLETADO" : this.aguardandoColetaSelecionado ? "AGUARDANDO_COLETA" : String(this.produto?.status || ""))
                 .trim()
                 .toUpperCase();
 
@@ -150,42 +153,27 @@ export default function descarte() {
             const atual = String(this.produto.status || "").toUpperCase();
             const novo = this.$refs.statusAtual?.value;
 
+            if (this.solicitacaoEmEdicao && novo === "PENDENTE") {
+                this.cancelarSolicitacao();
+                return;
+            }
+
+            if (this.coletaEmEdicao && novo !== "COLETADO") this.cancelarEdicaoColeta();
             if (!novo || novo === atual) return;
 
             // Volta ao status real enquanto aguarda a confirmacao.
             this.sincronizarStatusAtual();
 
             if (atual === "PENDENTE" && novo === "AGUARDANDO_COLETA") {
-                if (!String(this.motivo || "").trim()) {
-                    this.$store.alert.erro(
-                        "Informe o motivo do descarte antes de alterar o status."
-                    );
-                    return;
-                }
-
-                window.dispatchEvent(new CustomEvent("abrir-confirmacao", {
-                    detail: {
-                        titulo: "Registrar descarte",
-                        mensagem: "Confirmar o descarte deste equipamento e alterar o status para Aguardando coleta?",
-                        textoConfirmar: "Confirmar descarte",
-                        acao: () => this.registrarDescarte()
-                    }
-                }));
+                this.solicitacaoEmEdicao = true;
+                this.aguardandoColetaSelecionado = true;
+                if (this.quantidadeRetirada === "") this.quantidadeRetirada = 1;
+                this.sincronizarStatusAtual();
                 return;
             }
 
             if (atual === "AGUARDANDO_COLETA" && novo === "COLETADO") {
-                if (!this.empresaColetoraValida()) return;
-                this.confirmacaoColetaAberta = true;
-
-                window.dispatchEvent(new CustomEvent("abrir-confirmacao", {
-                    detail: {
-                        titulo: "Confirmar coleta",
-                        mensagem: "Confirmar a coleta deste equipamento?",
-                        textoConfirmar: "Confirmar coleta",
-                        acao: () => this.confirmarColetaPorLeitura(this.produto.id)
-                    }
-                }));
+                this.iniciarColeta();
                 return;
             }
 
@@ -194,8 +182,71 @@ export default function descarte() {
             );
         },
 
+        iniciarColeta() {
+            this.coletaEmEdicao = true;
+            this.sincronizarStatusAtual();
+        },
+
+        cancelarEdicaoColeta() {
+            this.coletaEmEdicao = false;
+            this.empresaColetoraId = "";
+            this.sincronizarStatusAtual();
+        },
+
+        solicitarConfirmacaoColeta() {
+            if (this.empresaBloqueada || this.confirmacaoColetaAberta || !this.empresaColetoraValida()) return;
+            const id = this.produto.id;
+            this.confirmacaoColetaAberta = true;
+            window.dispatchEvent(new CustomEvent("abrir-confirmacao", {
+                detail: {
+                    titulo: "Confirmar coleta",
+                    mensagem: "Confirmar a coleta deste equipamento?",
+                    textoConfirmar: "Confirmar coleta",
+                    acao: () => this.confirmarColetaPorLeitura(id)
+                }
+            }));
+        },
+
+        cancelarAcaoDescarte() {
+            if (this.coletaEmEdicao) {
+                this.cancelarEdicaoColeta();
+                return;
+            }
+            this.cancelarSolicitacao();
+        },
+
+        quantidadeRetiradaValida() {
+            const quantidade = Number(this.quantidadeRetirada);
+            if (Number.isInteger(quantidade) && quantidade >= 1 && quantidade <= 2147483647) {
+                return true;
+            }
+
+            this.$store.alert.erro("Informe uma quantidade de retirada inteira maior que zero.");
+            return false;
+        },
+
+        cancelarSolicitacao() {
+            this.solicitacaoEmEdicao = false;
+            this.aguardandoColetaSelecionado = false;
+            this.quantidadeRetirada = "";
+            this.sincronizarStatusAtual();
+        },
+
+        confirmarSolicitacao() {
+            if (!this.solicitacaoEmEdicao || this.salvando) return;
+
+            window.dispatchEvent(new CustomEvent("abrir-confirmacao", {
+                detail: {
+                    titulo: "Registrar descarte",
+                    mensagem: "Confirmar a solicitação e alterar o status para Aguardando coleta?",
+                    textoConfirmar: "Confirmar descarte",
+                    acao: () => this.registrarDescarte()
+                }
+            }));
+        },
+
         async registrarDescarte() {
-            if (this.salvando) return;
+            if (this.salvando || !this.solicitacaoEmEdicao) return;
 
             if (!this.produto?.id) {
                 this.$store.alert.erro("Localize um equipamento primeiro.");
@@ -209,6 +260,8 @@ export default function descarte() {
                 return;
             }
 
+            if (!this.quantidadeRetiradaValida()) return;
+            const parametros = new URLSearchParams({ quantidade: this.quantidadeRetirada });
             const motivo = String(this.motivo || "").trim();
 
             if (!motivo) {
@@ -220,7 +273,7 @@ export default function descarte() {
 
             try {
                 const resposta = await fetch(
-                    `/descartes/${encodeURIComponent(this.produto.id)}`,
+                    `/descartes/${encodeURIComponent(this.produto.id)}?${parametros}`,
                     {
                         method: "POST",
                         headers: this.obterHeaders(),
@@ -240,6 +293,8 @@ export default function descarte() {
                     );
                 }
 
+                this.solicitacaoEmEdicao = false;
+                this.aguardandoColetaSelecionado = false;
                 this.produto = {
                     ...this.produto,
                     status: "AGUARDANDO_COLETA"
@@ -261,7 +316,11 @@ export default function descarte() {
             }
         },
         async buscar(tipo, valor) {
+            if (this.salvando) return;
+            this.cancelarSolicitacao();
             this.erro = "";
+            this.quantidadeRetirada = "";
+            this.empresaColetoraId = "";
             this.produto = null;
                 this.$nextTick(() => this.sincronizarStatusAtual());
 
@@ -281,6 +340,14 @@ export default function descarte() {
                     throw new Error(dados.erro || "Produto não encontrado.");
                 }
 
+                if (dados.status === "AGUARDANDO_COLETA") {
+                    const consulta = await fetch(`/coletas/quantidade-solicitada?produtoId=${encodeURIComponent(dados.id)}`);
+                    if (consulta.ok) {
+                        this.quantidadeRetirada = await consulta.json();
+                    } else {
+                        this.erro = "Não foi possível consultar a quantidade registrada.";
+                    }
+                }
                 this.produto = dados;
                 this.$nextTick(() => this.sincronizarStatusAtual());
             } catch (erro) {
@@ -305,8 +372,13 @@ export default function descarte() {
                 });
                 const dados = await resposta.json().catch(() => ({}));
                 if (!resposta.ok) throw new Error(dados.erro || dados.message || "Falha ao registrar a coleta.");
-                this.$store.alert.sucesso(`Coleta registrada pela empresa ${dados.empresaColetora}.`);
-                this.produto = { ...this.produto, status: "COLETADO" };
+                this.$store.alert.sucesso(`Coleta registrada. Saldo restante: ${dados.saldoRestante}.`);
+                if (Number(this.produto?.id) === Number(id)) {
+                    this.coletaEmEdicao = false;
+                    this.produto = { ...this.produto, status: dados.status };
+                    this.quantidadeRetirada = "";
+                    this.motivo = "";
+                }
                 this.sincronizarStatusAtual();
             } catch (erro) {
                 this.$store.alert.erro(erro.message || "Falha ao registrar a coleta.");

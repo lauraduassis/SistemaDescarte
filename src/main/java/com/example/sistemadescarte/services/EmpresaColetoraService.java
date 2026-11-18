@@ -41,11 +41,13 @@ public class EmpresaColetoraService {
         empresa.setNomeFantasia(obrigatorio(dados.nomeFantasia(), "Nome fantasia", 150));
         empresa.setResponsavelColeta(obrigatorio(dados.responsavelColeta(), "Responsavel pela coleta", 150));
         String telefone = obrigatorio(dados.telefone(), "Telefone", 20);
-        int digitos = telefone.replaceAll("\\D", "").length();
-        if (digitos < 10 || digitos > 11) throw new IllegalArgumentException("Informe um telefone com DDD valido.");
+        String digitos = telefone.replaceAll("\\D", "");
+        if (!telefone.matches("[0-9() -]+") || !digitos.matches("[1-9][0-9]{9,10}")) {
+            throw new IllegalArgumentException("Informe um telefone válido com DDD e 10 ou 11 dígitos.");
+        }
         empresa.setTelefone(telefone);
         String email = obrigatorio(dados.email(), "E-mail", 150).toLowerCase(Locale.ROOT);
-        if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"))
+        if (!email.matches("[^\\s@]+@[a-z0-9]+(?:-+[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-+[a-z0-9]+)*)+"))
             throw new IllegalArgumentException("Informe um e-mail valido.");
         empresa.setEmail(email);
         empresa.setAtivo(dados.ativo() == null || dados.ativo());

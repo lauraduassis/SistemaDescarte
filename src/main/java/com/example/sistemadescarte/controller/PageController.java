@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.example.sistemadescarte.services.EstoqueConsultaService;
+import com.example.sistemadescarte.services.EntradaEstoqueService;
+import com.example.sistemadescarte.services.HistoricoMovimentacaoService;
 import com.example.sistemadescarte.services.ProdutoService;
 import com.example.sistemadescarte.services.NotaDescarteService;
 import com.example.sistemadescarte.services.RastreabilidadeColetaService;
@@ -16,16 +18,22 @@ public class PageController {
 
     private final ProdutoService produtoService;
     private final EstoqueConsultaService estoqueConsultaService;
+    private final EntradaEstoqueService entradaEstoque;
+    private final HistoricoMovimentacaoService historicoMovimentacao;
     private final NotaDescarteService notaDescarteService;
     private final RastreabilidadeColetaService rastreabilidadeColetaService;
 
     public PageController(
             ProdutoService produtoService,
             EstoqueConsultaService estoqueConsultaService,
+            EntradaEstoqueService entradaEstoque,
+            HistoricoMovimentacaoService historicoMovimentacao,
             NotaDescarteService notaDescarteService,
             RastreabilidadeColetaService rastreabilidadeColetaService) {
         this.produtoService = produtoService;
         this.estoqueConsultaService = estoqueConsultaService;
+        this.entradaEstoque = entradaEstoque;
+        this.historicoMovimentacao = historicoMovimentacao;
         this.notaDescarteService = notaDescarteService;
         this.rastreabilidadeColetaService = rastreabilidadeColetaService;
     }
@@ -101,6 +109,7 @@ public class PageController {
         model.addAttribute("titulo", "Editar Produto");
         model.addAttribute("produto", produtoService.buscarPorId(id));
         model.addAttribute("modoEdicao", true);
+        model.addAttribute("quantidadeProduto", entradaEstoque.totalEntradas(id));
 
         return "cadastro-produto";
     }
@@ -123,7 +132,7 @@ public class PageController {
     public String historico(Model model, Authentication authentication) {
         adicionarDadosUsuario(model, authentication);
         model.addAttribute("titulo", "Histórico");
-        model.addAttribute("movimentacoes", notaDescarteService.listarHistoricoDescarte());
+        model.addAttribute("movimentacoes", historicoMovimentacao.listar());
         return "historico";
     }
     @GetMapping("/relatorios")

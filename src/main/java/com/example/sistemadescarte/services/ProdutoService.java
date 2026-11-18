@@ -1,5 +1,7 @@
 package com.example.sistemadescarte.services;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,12 +13,19 @@ public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
 
-    public ProdutoService(ProdutoRepository produtoRepository) {
+    private final EntradaEstoqueService entradaEstoque;
+    private final EntityManager entityManager;
+
+    public ProdutoService(ProdutoRepository produtoRepository, EntradaEstoqueService entradaEstoque,
+                          EntityManager entityManager) {
         this.produtoRepository = produtoRepository;
+        this.entradaEstoque = entradaEstoque;
+        this.entityManager = entityManager;
     }
 
     @Transactional
-    public ProdutoEntity incluir(ProdutoEntity produto) {
+    public ProdutoEntity incluir(ProdutoEntity produto, int quantidade) {
+        validarQuantidade(quantidade);
         validarDados(produto);
 
         produto.setPatrimonio(produto.getPatrimonio().trim());
@@ -39,14 +48,17 @@ public class ProdutoService {
             gerarEan13(produtoSalvo.getId())
         );
 
-        return produtoRepository.save(produtoSalvo);
+        produtoRepository.saveAndFlush(produtoSalvo);
+        entradaEstoque.registrar(produtoSalvo.getId(), quantidade);
+        return produtoSalvo;
     }
 
     @Transactional
-    public ProdutoEntity atualizar(int id, ProdutoEntity dados) {
+    public ProdutoEntity atualizar(int id, ProdutoEntity dados, int quantidade) {
+        validarQuantidade(quantidade);
         validarDados(dados);
 
-        ProdutoEntity produto = buscarPorId(id);
+        ProdutoEntity produto = buscarParaAlteracao(id);
         String patrimonio = dados.getPatrimonio().trim();
 
         if (produtoRepository.existsByPatrimonioAndIdNot(patrimonio, id)) {
@@ -62,6 +74,7 @@ public class ProdutoService {
         produto.setModelo(limpar(dados.getModelo()));
         produto.setObservacoes(limpar(dados.getObservacoes()));
 
+        entradaEstoque.ajustar(id, quantidade);
         return produtoRepository.save(produto);
     }
 
@@ -97,6 +110,20 @@ public class ProdutoService {
         return base + digitoVerificador;
     }
 
+    ProdutoEntity buscarParaAlteracao(int id) {
+        ProdutoEntity produto = entityManager.find(ProdutoEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (produto == null) {
+            throw new IllegalArgumentException("Produto não encontrado.");
+        }
+        return produto;
+    }
+
+    private void validarQuantidade(int quantidade) {
+        if (quantidade < 1) {
+            throw new IllegalArgumentException("Informe uma quantidade inteira maior que zero.");
+        }
+    }
+
     private void validarDados(ProdutoEntity produto) {
         if (produto.getPatrimonio() == null
                 || produto.getPatrimonio().isBlank()) {
@@ -119,7 +146,8 @@ public class ProdutoService {
 
     @Transactional
     public void excluir(int id) {
-        ProdutoEntity produto = buscarPorId(id);
+        ProdutoEntity produto = buscarParaAlteracao(id);
+        entradaEstoque.removerEntradaDoCadastro(id);
         produtoRepository.delete(produto);
     }
     public long contarPorStatus(String status) {

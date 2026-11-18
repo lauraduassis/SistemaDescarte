@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.sistemadescarte.entities.NotaDescarteEntity;
@@ -48,10 +49,11 @@ public class NotaDescarteController {
     @PostMapping("/{produtoId}")
     public ResponseEntity<?> salvar(
             @PathVariable int produtoId,
-            @RequestBody NotaDescarteEntity notaDescarte) {
+            @RequestBody NotaDescarteEntity notaDescarte,
+            @RequestParam int quantidade) {
         try {
             return ResponseEntity.ok(
-                notaDescarteService.salvar(produtoId, notaDescarte)
+                notaDescarteService.salvar(produtoId, notaDescarte, quantidade)
             );
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(

@@ -26,6 +26,17 @@
                 <section class="section" th:if="${tipoRelatorio == 'movimentacao-estoque'}">
                     <div class="reports-heading">
                         <h2>Movimentação de estoque</h2>
+                        <a th:href="@{/relatorios/movimentacao-estoque.pdf}"
+           target="_blank" rel="noopener"
+           aria-label="Imprimir relatório de movimentação de estoque em PDF"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #111;border-radius:10px;color:#111;font-weight:600;text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9V4h12v5"/>
+                <rect x="6" y="14" width="12" height="6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            </svg>
+            Imprimir PDF
+        </a>
                     </div>
 
                     <div th:replace="~{fragments/estoque :: totais}"></div>
@@ -42,7 +53,6 @@
                                         <th scope="col">Produto</th>
                                         <th scope="col">Entradas</th>
                                         <th scope="col">Retiradas</th>
-                                        <th scope="col">Descartes</th>
                                         <th scope="col">Saldo</th>
                                     </tr>
                                 </thead>
@@ -53,11 +63,10 @@
                                         <td th:text="${produto.descricao}">—</td>
                                         <td th:text="${estoque.entradas()}">0</td>
                                         <td th:text="${estoque.retiradas()}">0</td>
-                                        <td th:text="${estoque.descartes()}">0</td>
                                         <td th:text="${estoque.saldo()}">0</td>
                                     </tr>
                                     <tr th:if="${produtosEstoque.isEmpty()}">
-                                        <td colspan="6">Nenhum produto encontrado na consulta de estoque.</td>
+                                        <td colspan="5">Nenhum produto encontrado na consulta de estoque.</td>
                                     </tr>
                                 </tbody>
                             </table>

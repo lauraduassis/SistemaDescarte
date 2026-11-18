@@ -2,6 +2,8 @@ package com.example.sistemadescarte.services;
 
 import com.example.sistemadescarte.entities.EmpresaColetoraEntity;
 import com.example.sistemadescarte.entities.ProdutoEntity;
+import com.example.sistemadescarte.entities.NotaDescarteProduto;
+import com.example.sistemadescarte.repositories.NotaDescarteProdutoRepository;
 import com.example.sistemadescarte.entities.RetiradaEntity;
 import com.example.sistemadescarte.entities.RetiradaProduto;
 import com.example.sistemadescarte.repositories.EmpresaColetoraRepository;
@@ -22,15 +24,20 @@ public class RastreabilidadeColetaService {
     private final EmpresaColetoraRepository empresas;
     private final RetiradaRepository retiradas;
     private final RetiradaProdutoRepository itens;
+    private final NotaDescarteProdutoRepository descartes;
+    private final EstoqueConsultaService estoque;
 
     public RastreabilidadeColetaService(EntityManager entityManager,
                                       EmpresaColetoraRepository empresas,
                                       RetiradaRepository retiradas,
-                                      RetiradaProdutoRepository itens) {
+                                      RetiradaProdutoRepository itens,
+                                      NotaDescarteProdutoRepository descartes, EstoqueConsultaService estoque) {
         this.entityManager = entityManager;
         this.empresas = empresas;
         this.retiradas = retiradas;
         this.itens = itens;
+        this.descartes = descartes;
+        this.estoque = estoque;
     }
 
     @Transactional(readOnly = true)
@@ -57,6 +64,17 @@ public class RastreabilidadeColetaService {
             .orElseThrow(() -> new IllegalArgumentException("Empresa coletora nao encontrada."));
         if (!empresa.isAtivo()) throw new IllegalArgumentException("Selecione uma empresa coletora ativa.");
 
+        double quantidadeSolicitada = consultarQuantidadeSolicitada(produtoId)
+            .orElseThrow(() -> new IllegalArgumentException("Solicitação de descarte não encontrada."));
+        long saldo = estoque.consultarSaldoFisico(produtoId);
+        if (!Double.isFinite(quantidadeSolicitada) || quantidadeSolicitada < 1
+                || quantidadeSolicitada != Math.rint(quantidadeSolicitada) || quantidadeSolicitada > saldo) {
+            throw new IllegalArgumentException("Quantidade solicitada inválida para o saldo disponível (" + Math.max(0, saldo) + ").");
+        }
+        long quantidade = (long) quantidadeSolicitada;
+        long saldoRestante = saldo - quantidade;
+        String status = saldoRestante == 0 ? "COLETADO" : "PENDENTE";
+
         RetiradaEntity retirada = new RetiradaEntity();
         retirada.setDataHora(LocalDateTime.now());
         retirada.setObservacao("");
@@ -66,14 +84,20 @@ public class RastreabilidadeColetaService {
         RetiradaProduto item = new RetiradaProduto();
         item.setRetirada(retirada);
         item.setProduto(produto);
-        item.setQuantidade(1.0);
+        item.setQuantidade(quantidade);
         itens.save(item);
 
-        produto.setStatus("COLETADO");
+        produto.setStatus(status);
         entityManager.flush();
 
         return new ColetaConfirmada(retirada.getId(), produto.getId(), produto.getPatrimonio(),
-            "COLETADO", empresa.getId(), empresa.getNomeFantasia(), retirada.getDataHora());
+            status, empresa.getId(), empresa.getNomeFantasia(), retirada.getDataHora(), saldoRestante);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<Double> consultarQuantidadeSolicitada(int produtoId) {
+        return descartes.findFirstByProduto_IdOrderByIdDesc(produtoId)
+            .map(NotaDescarteProduto::getQuantidade);
     }
 
     @Transactional(readOnly = true)
@@ -127,7 +151,7 @@ public class RastreabilidadeColetaService {
     public record DadosConfirmacao(Integer produtoId, Integer empresaColetoraId) { }
     public record ColetaConfirmada(Integer retiradaId, Integer produtoId, String patrimonio,
                                    String status, Integer empresaColetoraId,
-                                   String empresaColetora, LocalDateTime dataHora) { }
+                                   String empresaColetora, LocalDateTime dataHora, long saldoRestante) { }
     public record RegistroColeta(Integer retiradaId, Integer produtoId, String patrimonio,
                                 String descricao, LocalDateTime dataHora, Integer empresaColetoraId,
                                 String empresaColetora, String responsavelColeta,

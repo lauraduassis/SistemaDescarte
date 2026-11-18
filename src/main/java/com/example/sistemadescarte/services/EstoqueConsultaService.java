@@ -22,22 +22,31 @@ public class EstoqueConsultaService {
             SELECT COALESCE(SUM(CAST(Total_Entradas AS bigint)), 0),
                    COALESCE(SUM(CAST(Total_Retiradas AS bigint)), 0),
                    COALESCE(SUM(CAST(Total_Descartes AS bigint)), 0),
-                   COALESCE(SUM(CAST(Estoque_Atual AS bigint)), 0)
+                   COALESCE(SUM(CAST(Total_Entradas AS bigint) - CAST(Total_Retiradas AS bigint)), 0)
             FROM dbo.vw_EstoqueAtual
             """, (rs, rowNum) -> new Quantidades(
                 rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4)));
     }
 
+    public long consultarSaldoFisico(int produtoId) {
+        return jdbcTemplate.queryForObject("""
+            SELECT COALESCE(SUM(CAST(Total_Entradas AS bigint) - CAST(Total_Retiradas AS bigint)), 0)
+            FROM dbo.vw_EstoqueAtual
+            WHERE Cod_Produto = ?
+            """, Long.class, produtoId);
+    }
+
     public Map<Integer, Quantidades> consultarPorProduto() {
         return jdbcTemplate.query("""
-            SELECT Cod_Produto, Total_Entradas, Total_Retiradas, Total_Descartes, Estoque_Atual
+            SELECT Cod_Produto, Total_Entradas, Total_Retiradas, Total_Descartes,
+                   CAST(Total_Entradas AS bigint) - CAST(Total_Retiradas AS bigint) AS Saldo_Fisico
             FROM dbo.vw_EstoqueAtual
             """, rs -> {
                 Map<Integer, Quantidades> estoque = new HashMap<>();
                 while (rs.next()) {
                     estoque.put(rs.getInt("Cod_Produto"), new Quantidades(
                         rs.getLong("Total_Entradas"), rs.getLong("Total_Retiradas"),
-                        rs.getLong("Total_Descartes"), rs.getLong("Estoque_Atual")));
+                        rs.getLong("Total_Descartes"), rs.getLong("Saldo_Fisico")));
                 }
                 return estoque;
             });
