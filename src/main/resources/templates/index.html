@@ -77,7 +77,7 @@
                         </div>
 
                         <strong th:text="${itensColetados}">0</strong>
-                        <p>Movimentações concluídas</p>
+                        <p>Patrimônios com coleta concluída</p>
                     </article>
 
                     <article class="stat-card">
@@ -90,6 +90,13 @@
                         <p>Patrimônios no sistema</p>
                     </article>
 
+                </section>
+
+                <section class="section" aria-labelledby="movimentacoes-estoque">
+                    <div class="section-header">
+                        <h2 id="movimentacoes-estoque">Movimentações de estoque</h2>
+                    </div>
+                    <div th:replace="~{fragments/estoque :: totais}"></div>
                 </section>
 
                 <!-- AÇÕES -->

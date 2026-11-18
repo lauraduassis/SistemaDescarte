@@ -90,9 +90,9 @@
                 <select id="statusProdutosGlobal"
                         class="select-premium">
 
-                    <option value="">Todos</option>
+                    <option value="">Todos os ativos</option>
 
-                    <option th:each="codigo : ${statusRelatorios}"
+                    <option th:each="codigo : ${statusRelatorios}" th:if="${codigo != 'COLETADO'}"
                             th:value="${codigo}"
                             th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(codigo, '_', ' ')))}">
                         Status
@@ -203,6 +203,10 @@
                         </th>
 
                         <th>Última alteração</th>
+                        <th>Entradas</th>
+                        <th>Retiradas</th>
+                        <th>Descartes</th>
+                        <th>Saldo</th>
                         <th>Ações</th>
 
                     </tr>
@@ -211,6 +215,7 @@
                 <tbody>
 
                     <tr th:each="produto : ${produtos}"
+                        th:with="estoque=${estoquePorProduto[produto.id]}"
                         data-paginacao-item
                         th:attr="data-data=${produto.dataCadastro},data-tipo=${produto.status}">
 
@@ -229,6 +234,11 @@
                         <td th:text="${produto.dataAtualizacao != null ? #temporals.format(produto.dataAtualizacao, 'dd/MM/yyyy HH:mm') : '—'}">
                             -
                         </td>
+
+                        <td th:text="${estoque != null ? estoque.entradas() : '—'}">—</td>
+                        <td th:text="${estoque != null ? estoque.retiradas() : '—'}">—</td>
+                        <td th:text="${estoque != null ? estoque.descartes() : '—'}">—</td>
+                        <td th:text="${estoque != null ? estoque.saldo() : '—'}">—</td>
 
                         <td>
                             <div class="products-actions">
@@ -297,7 +307,7 @@ Excluir
 
                     <tr class="empty-row history-filter-empty"
                         style="display: none;">
-                        <td colspan="7">
+                        <td colspan="11">
 
                             <div class="empty-state">
 

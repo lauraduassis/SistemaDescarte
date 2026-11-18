@@ -188,6 +188,13 @@
             Visão geral
         </a>
 
+        <a th:href="@{/relatorios(tipo='movimentacao-estoque')}"
+           th:classappend="${tipoRelatorio == 'movimentacao-estoque'} ? ' sidebar-premium-active' : ''"
+           th:attr="aria-current=${tipoRelatorio == 'movimentacao-estoque' ? 'page' : null}"
+           class="sidebar-premium-subitem block rounded-lg px-3 py-2 text-sm transition">
+            Movimentação de estoque
+        </a>
+
         <a th:href="@{/relatorios(tipo='status')}"
            th:classappend="${tipoRelatorio == 'status'} ? ' sidebar-premium-active' : ''"
            class="sidebar-premium-subitem block rounded-lg px-3 py-2 text-sm transition">

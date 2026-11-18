@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class PerfilController {
@@ -69,17 +70,14 @@ public class PerfilController {
     public String salvarSenha(@RequestParam String senhaAtual,
                               @RequestParam String novaSenha,
                               @RequestParam String confirmarSenha,
-                              Model model,
+                              RedirectAttributes redirectAttributes,
                               Authentication auth) {
         try {
             service.alterarSenha(auth.getName(), senhaAtual, novaSenha, confirmarSenha);
-            preparar(model, auth, "Configurações");
-            model.addAttribute("sucessoPerfil", "Senha atualizada com sucesso.");
-            return "configuracoes";
+            redirectAttributes.addFlashAttribute("sucessoPerfil", "Senha atualizada com sucesso.");
         } catch (IllegalArgumentException e) {
-            preparar(model, auth, "Configurações");
-            model.addAttribute("erroPerfil", e.getMessage());
-            return "configuracoes";
+            redirectAttributes.addFlashAttribute("erroPerfil", e.getMessage());
         }
+        return "redirect:/configuracoes";
     }
 }

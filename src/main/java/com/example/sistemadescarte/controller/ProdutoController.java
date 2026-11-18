@@ -98,7 +98,7 @@ public class ProdutoController {
 
     @GetMapping(value = "/etiquetas", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> gerarTodasEtiquetas() {
-        java.util.List<ProdutoEntity> produtos = produtoService.listarTodos();
+        var produtos = new java.util.ArrayList<>(produtoService.listarParaGestao());
         if (produtos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

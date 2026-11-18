@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import com.example.sistemadescarte.services.EstoqueConsultaService;
 import com.example.sistemadescarte.services.ProdutoService;
 import com.example.sistemadescarte.services.NotaDescarteService;
 import com.example.sistemadescarte.services.RastreabilidadeColetaService;
@@ -14,14 +15,17 @@ import com.example.sistemadescarte.services.RastreabilidadeColetaService;
 public class PageController {
 
     private final ProdutoService produtoService;
+    private final EstoqueConsultaService estoqueConsultaService;
     private final NotaDescarteService notaDescarteService;
     private final RastreabilidadeColetaService rastreabilidadeColetaService;
 
     public PageController(
             ProdutoService produtoService,
+            EstoqueConsultaService estoqueConsultaService,
             NotaDescarteService notaDescarteService,
             RastreabilidadeColetaService rastreabilidadeColetaService) {
         this.produtoService = produtoService;
+        this.estoqueConsultaService = estoqueConsultaService;
         this.notaDescarteService = notaDescarteService;
         this.rastreabilidadeColetaService = rastreabilidadeColetaService;
     }
@@ -61,6 +65,7 @@ public class PageController {
         model.addAttribute("prontosParaColeta", produtoService.contarPorStatus("AGUARDANDO_COLETA"));
         model.addAttribute("itensColetados", produtoService.contarPorStatus("COLETADO"));
         model.addAttribute("totalRegistrado", produtoService.contarTodos());
+        model.addAttribute("estoqueTotal", estoqueConsultaService.consultarTotais());
         model.addAttribute("movimentacoes", notaDescarteService.listarHistoricoDescarte());
         return "index";
     }
@@ -69,7 +74,8 @@ public class PageController {
     public String produtos(Model model, Authentication authentication) {
         adicionarDadosUsuario(model, authentication);
         model.addAttribute("titulo", "Produtos");
-        model.addAttribute("produtos", produtoService.listarTodos());
+        model.addAttribute("produtos", produtoService.listarParaGestao());
+        model.addAttribute("estoquePorProduto", estoqueConsultaService.consultarPorProduto());
         return "produtos";
     }
 
@@ -136,6 +142,17 @@ public class PageController {
         adicionarDadosUsuario(model, authentication);
         model.addAttribute("titulo", "Relatórios");
         model.addAttribute("tipoRelatorio", tipo);
+
+        if ("movimentacao-estoque".equals(tipo)) {
+            var estoquePorProduto = estoqueConsultaService.consultarPorProduto();
+            var produtosEstoque = produtoService.listarTodos().stream()
+                .filter(produto -> estoquePorProduto.containsKey(produto.getId()))
+                .toList();
+            model.addAttribute("estoqueTotal", estoqueConsultaService.consultarTotais());
+            model.addAttribute("estoquePorProduto", estoquePorProduto);
+            model.addAttribute("produtosEstoque", produtosEstoque);
+            return "relatorios";
+        }
 
         if ("visao-geral".equals(tipo)) {
             model.addAttribute("produtosVisaoGeral", produtoService.listarTodos());

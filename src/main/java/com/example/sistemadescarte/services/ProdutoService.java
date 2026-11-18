@@ -65,6 +65,12 @@ public class ProdutoService {
         return produtoRepository.save(produto);
     }
 
+    public java.util.List<ProdutoEntity> listarParaGestao() {
+        return listarTodos().stream()
+            .filter(produto -> !"COLETADO".equals(produto.getStatus()))
+            .toList();
+    }
+
     public java.util.List<ProdutoEntity> listarTodos() {
         return produtoRepository.findAll();
     }

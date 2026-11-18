@@ -1,0 +1,54 @@
+<div class="stats-grid" th:fragment="totais">
+    <article class="stat-card">
+        <div class="stat-header">
+            <span>Entradas</span>
+            <div class="stat-icon collected">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3v11m-4-4 4 4 4-4M4 15v5h16v-5"/>
+                </svg>
+            </div>
+        </div>
+        <strong th:text="${estoqueTotal.entradas()}">0</strong>
+        <p>Unidades</p>
+    </article>
+    <article class="stat-card">
+        <div class="stat-header">
+            <span>Retiradas</span>
+            <div class="stat-icon ready">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 15V4m-4 4 4-4 4 4M4 15v5h16v-5"/>
+                </svg>
+            </div>
+        </div>
+        <strong th:text="${estoqueTotal.retiradas()}">0</strong>
+        <p>Unidades</p>
+    </article>
+    <article class="stat-card">
+        <div class="stat-header">
+            <span>Descartes</span>
+            <div class="stat-icon pending">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5m4-5v5"/>
+                </svg>
+            </div>
+        </div>
+        <strong th:text="${estoqueTotal.descartes()}">0</strong>
+        <p>Unidades</p>
+    </article>
+    <article class="stat-card">
+        <div class="stat-header">
+            <span>Saldo atual</span>
+            <div class="stat-icon total">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m12 3 8 4v10l-8 4-8-4V7l8-4Zm0 8 8-4m-8 4L4 7m8 4v10"/>
+                </svg>
+            </div>
+        </div>
+        <strong th:text="${estoqueTotal.saldo()}">0</strong>
+        <p>Unidades</p>
+    </article>
+</div>

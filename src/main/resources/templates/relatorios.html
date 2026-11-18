@@ -23,7 +23,49 @@
 
             <main class="content">
 
-                <section class="reports-heading">
+                <section class="section" th:if="${tipoRelatorio == 'movimentacao-estoque'}">
+                    <div class="reports-heading">
+                        <h2>Movimentação de estoque</h2>
+                    </div>
+
+                    <div th:replace="~{fragments/estoque :: totais}"></div>
+
+                    <section class="panel" style="margin-block-start: 24px;" aria-labelledby="estoque-por-produto">
+                        <div class="panel-header">
+                            <h3 id="estoque-por-produto">Quantidades por produto</h3>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Patrimônio</th>
+                                        <th scope="col">Produto</th>
+                                        <th scope="col">Entradas</th>
+                                        <th scope="col">Retiradas</th>
+                                        <th scope="col">Descartes</th>
+                                        <th scope="col">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="produto : ${produtosEstoque}"
+                                        th:with="estoque=${estoquePorProduto[produto.id]}">
+                                        <td th:text="${produto.patrimonio}">—</td>
+                                        <td th:text="${produto.descricao}">—</td>
+                                        <td th:text="${estoque.entradas()}">0</td>
+                                        <td th:text="${estoque.retiradas()}">0</td>
+                                        <td th:text="${estoque.descartes()}">0</td>
+                                        <td th:text="${estoque.saldo()}">0</td>
+                                    </tr>
+                                    <tr th:if="${produtosEstoque.isEmpty()}">
+                                        <td colspan="6">Nenhum produto encontrado na consulta de estoque.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </section>
+
+                <section class="reports-heading" th:unless="${tipoRelatorio == 'movimentacao-estoque'}">
                     <div>
                         <span class="section-label">ANÁLISE DE DADOS</span>
 
@@ -598,7 +640,7 @@
 
 </section>
 
-                <section th:if="${tipoRelatorio != 'status' and tipoRelatorio != 'descartes' and tipoRelatorio != 'por-status'}" class="stats-grid reports-stats">
+                <section th:if="${tipoRelatorio != 'status' and tipoRelatorio != 'descartes' and tipoRelatorio != 'por-status' and tipoRelatorio != 'movimentacao-estoque'}" class="stats-grid reports-stats">
 
                     <article class="stat-card">
                         <div class="stat-header">
