@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Efetuar Descarte | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+    
+<style>
+/* layout-descarte-2x2 */
+@media (min-width: 768px) {
+  .form-grid:has(> .form-group #produto) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: start;
+  }
+  .form-grid:has(> .form-group #produto) > .form-group {
+    grid-column: auto !important;
+    min-width: 0;
+  }
+  .form-grid:has(> .form-group #produto) > .form-group:has(#produto) { order: 1; }
+  .form-grid:has(> .form-group #produto) > .form-group:has(#categoria) { order: 2; }
+  .form-grid:has(> .form-group #produto) > .form-group:has(#statusAtual) { order: 3; }
+  .form-grid:has(> .form-group #produto) > .form-group:has(#empresaColetoraSelect) { order: 4; }
+}
+</style>
+</head>
+
+<body x-data="descarte">
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="form-intro">
+                    <div>
+                        <span class="section-label">NOVA SOLICITAÇÃO</span>
+
+                        <h2>Registrar item para descarte</h2>
+
+                        <p>
+                            Localize o patrimônio, confirme os dados do item e registre
+                            a solicitação de descarte.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="form-panel">
+
+                    <form @submit.prevent="registrarDescarte()">
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>01</span>
+
+                                <div>
+                                    <h3>Localizar patrimônio</h3>
+                                    <p>Informe o número do patrimônio ou o código de barras.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+
+                                <div class="form-group">
+                                    <label for="patrimonio">
+                                        Número do patrimônio
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="patrimonio"
+                                        name="patrimonio" x-model="patrimonio" @keydown.enter.prevent="buscarPorPatrimonio()"
+                                        placeholder="Ex.: 123456"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="codigoBarras">
+                                        Código de barras
+                                    </label>
+
+                                    <div class="input-action">
+                                        <input
+                                            type="text"
+                                            id="codigoBarras" x-ref="campoCodigoDescarte"
+                                            name="codigoBarras" x-model="codigoBarras" @keydown.enter.prevent="buscarPorCodigoBarras()"
+                                            placeholder="Leia ou informe o código"
+                                        >
+
+                                        <button class="descarte-ler-codigo-premium" type="button" @click="buscarPorCodigoBarras()">
+<svg width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M4 7V4h4M16 4h4v3M20 17v3h-4M8 20H4v-3"/>
+    <path d="M7 9v6M10 9v6M13 9v6M16 9v6"/>
+</svg>
+Ler código</button>
+                                    </div>
+                                </div>
+
+                            <p x-show="erro" x-text="erro" class="form-error"></p>
+
+
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>02</span>
+
+                                <div>
+                                    <h3>Dados do produto</h3>
+                                    <p>Informações do patrimônio selecionado.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+
+                                <div class="form-group form-group-full">
+                                    <label for="produto">
+                                        Produto
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="produto"
+                                        name="produto" :value="produto ? produto.descricao : ''"
+                                        placeholder="Produto selecionado"
+                                        readonly
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="categoria">
+                                        Categoria
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="categoria"
+                                        name="categoria" :value="produto ? produto.categoria : ''"
+                                        placeholder="Categoria"
+                                        readonly
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="empresaColetoraSelect">Empresa responsavel pela coleta</label>
+                                    <div class="select-premium-field" x-data="selectPremium">
+<select id="empresaColetoraSelect" x-ref="empresaColetoraSelect"
+                                            x-model="empresaColetoraId"
+                                            class="select-premium w-full rounded-lg border border-slate-300 px-3 py-2"
+                                            aria-label="Empresa responsavel pela coleta">
+                                        <option value="">Selecione a empresa coletora</option>
+                                        <template x-for="empresa in empresasColetoras" :key="empresa.id">
+                                            <option :value="empresa.id" x-text="empresa.nomeFantasia"></option>
+                                        </template>
+                                    </select>
+</div>
+                                    <small class="text-slate-500">Obrigatorio ao confirmar a coleta; nao e necessario na solicitacao inicial.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="statusAtual">
+                                        Status atual
+                                    </label>
+
+                                    <div class="select-premium-field status-atual-field"
+     x-data="selectPremium">
+
+    <select id="statusAtual" x-ref="statusAtual" @change="solicitarAlteracaoStatus()"
+            name="statusAtual"
+            class="select-premium"
+            aria-label="Status atual do equipamento">
+
+        <option value="">Nenhum equipamento selecionado</option>
+        <option value="PENDENTE">Pendente</option>
+        <option value="AGUARDANDO_COLETA">Aguardando coleta</option>
+        <option value="COLETADO">Coletado</option>
+
+    </select>
+
+</div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>03</span>
+
+                                <div>
+                                    <h3>Informações do descarte</h3>
+                                    <p>Registre os dados relacionados à solicitação.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+
+
+                                <div class="form-group form-group-full">
+                                    <label for="motivo">
+                                        Motivo do descarte
+                                    </label>
+
+                                    <textarea
+                                        id="motivo"
+                                        name="motivo"
+                                        rows="5"
+                                        x-model="motivo"
+                                        required
+                                        placeholder="Informe o motivo do descarte..."
+                                    ></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+            </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Aviso informativo de baixa ja registrada (nao modifica o status). -->
+    <div id="modalBaixaAnterior" x-show="mostrarBaixaAnterior" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="tituloBaixaAnterior"
+         style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.45)">
+        <div style="width:100%;max-width:440px;padding:24px;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.2)">
+            <h3 id="tituloBaixaAnterior" style="font-size:19px;font-weight:700;margin:0 0 12px;color:#0f172a">Produto ja coletado</h3>
+            <p style="font-size:14px;line-height:1.6;margin:0;color:#475569">
+                Este equipamento ja teve sua baixa registrada e nao pode ser coletado novamente.
+            </p>
+            <p style="font-size:13px;margin:12px 0 0;color:#475569" x-show="produto">
+                <strong x-text="produto?.descricao || 'Equipamento'"></strong>
+                <span x-text="produto?.patrimonio ? ' - Patrimonio: ' + produto.patrimonio : ''"></span>
+            </p>
+            <div style="display:flex;justify-content:flex-end;margin-top:24px">
+                <button type="button" @click="fecharBaixaAnterior()"
+                        style="padding:10px 18px;border:none;border-radius:9px;background:#0f172a;color:#fff;font-weight:600;cursor:pointer">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+    <div th:replace="~{fragments/components :: components}"></div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empresas Coletoras | Sistema de Descarte</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+<body x-data="empresasColetoras()">
+<div class="app-layout">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="main-area">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <main class="content">
+            <section class="mb-8">
+                <span class="text-sm font-semibold uppercase tracking-wider text-blue-600">CONTROLE DE COLETAS</span>
+                <h2 class="mt-2 text-3xl font-bold text-slate-800">Gerenciar empresas coletoras</h2>
+                <p class="mt-2 max-w-2xl text-slate-600">Cadastre as empresas responsaveis pela coleta de equipamentos. Empresas inativas permanecem no historico.</p>
+            </section>
+            <section class="bg-white rounded-xl shadow border border-slate-200 p-6 mb-8">
+                <h3 class="text-lg font-semibold text-slate-800 mb-5" x-text="tituloFormulario"></h3>
+                <form @submit.prevent="salvar()">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex flex-col gap-2">
+                            <label for="empresaNome">Nome fantasia</label>
+                            <input id="empresaNome" x-model="form.nomeFantasia" maxlength="150" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Nome da empresa">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="empresaResponsavel">Responsavel pela coleta</label>
+                            <input id="empresaResponsavel" x-model="form.responsavelColeta" maxlength="150" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Nome do responsavel">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="empresaTelefone">Telefone</label>
+                            <input id="empresaTelefone" type="tel" x-model="form.telefone" maxlength="20" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="(17) 99999-9999">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="empresaEmail">E-mail</label>
+                            <input id="empresaEmail" type="email" x-model="form.email" maxlength="150" required class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="empresa@exemplo.com">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex items-center gap-3">
+                        <input id="empresaAtivo" type="checkbox" x-model="form.ativo" class="h-4 w-4">
+                        <label for="empresaAtivo">Empresa ativa</label>
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-3 mt-6">
+                        <button type="button" @click="limpar()" class="user-form-clear-button">Limpar / Cancelar</button>
+                        <button type="submit" :disabled="salvando" class="user-form-save-button" x-text="textoSalvar"></button>
+                    </div>
+                </form>
+            </section>
+            <section class="panel history-panel">
+                <div class="panel-header">
+                    <div><span class="section-label">REGISTROS</span><h3>Empresas cadastradas</h3></div>
+                </div>
+                <div class="history-toolbar flex flex-wrap gap-3 items-end">
+                    <div class="history-search flex-1">
+                        <label for="buscarEmpresa">Buscar empresa</label>
+                        <input id="buscarEmpresa" type="search" x-model="busca" placeholder="Nome, responsavel, telefone ou e-mail">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label for="filtroEmpresaAtivo">Situacao</label>
+                        <select id="filtroEmpresaAtivo" x-model="situacao" class="rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">Todas</option>
+                            <option value="ATIVA">Ativas</option>
+                            <option value="INATIVA">Inativas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper overflow-x-auto">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome fantasia</th><th>Responsavel</th><th>Telefone</th><th>E-mail</th><th>Situacao</th><th>Acoes</th></tr></thead>
+                        <tbody>
+                            <template x-for="empresa in empresasFiltradas" :key="empresa.id">
+                                <tr>
+                                    <td x-text="empresa.id"></td>
+                                    <td x-text="empresa.nomeFantasia"></td>
+                                    <td x-text="empresa.responsavelColeta"></td>
+                                    <td x-text="empresa.telefone"></td>
+                                    <td x-text="empresa.email"></td>
+                                    <td x-text="situacaoTexto(empresa)"></td>
+                                    <td><div class="user-actions flex gap-2">
+                                        <button type="button" class="user-edit-button" @click="editar(empresa)">Editar</button>
+                                        <button type="button" class="user-delete-button" @click="alternarSituacao(empresa)" x-text="textoAcaoSituacao(empresa)"></button>
+                                    </div></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!carregando && empresasFiltradas.length === 0"><td colspan="7">Nenhuma empresa encontrada.</td></tr>
+                            <tr x-show="carregando"><td colspan="7">Carregando empresas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+<div th:replace="~{fragments/components :: components}"></div>
+</body>
+</html>

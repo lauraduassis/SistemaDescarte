@@ -1,0 +1,69 @@
+<header th:fragment="header"
+        class="relative z-20 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm lg:px-6">
+
+    <div class="flex min-w-0 items-center gap-3">
+
+        <button
+            type="button"
+            @click="$store.sidebar.abrirMenuMobile()"
+            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+            aria-label="Abrir menu"
+            title="Abrir menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" class="h-6 w-6" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+
+        <button
+            type="button"
+            @click="$store.sidebar.alternarMenu()"
+            class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
+            :aria-label="$store.sidebar.textoAlternarMenu()"
+            :title="$store.sidebar.textoAlternarMenu()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round"
+                 class="h-5 w-5" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+
+        <h1 class="truncate text-xl font-semibold text-slate-800"
+            th:text="${titulo} ?: 'Dashboard'">
+            Dashboard
+        </h1>
+
+    </div>
+
+    <div class="perfil-menu-conta">
+        <details class="perfil-menu-details">
+            <summary class="perfil-menu-gatilho" aria-label="Abrir menu do usuário">
+                <span class="perfil-menu-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                </span>
+                <span class="perfil-menu-identidade">
+                    <strong th:text="${usuarioLogado} ?: 'Minha conta'">Minha conta</strong>
+                    <small th:text="${permissao} ?: 'Usuário'">Usuário</small>
+                </span>
+                <svg class="perfil-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="perfil-menu-painel">
+                <div class="perfil-menu-topo">
+                    <strong th:text="${usuarioLogado} ?: 'Minha conta'">Minha conta</strong>
+                    <span th:text="${permissao} ?: 'Usuário'">Usuário</span>
+                </div>
+                <nav aria-label="Opções da conta">
+                    <a th:href="@{/meu-perfil}">Meu Perfil</a>
+                    <a th:href="@{/editar-perfil}">Editar Perfil</a>
+                    <a th:href="@{/configuracoes}">Configurações</a>
+                </nav>
+                <form method="post" th:action="@{/logout}" class="perfil-menu-sair">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit">Sair</button>
+                </form>
+            </div>
+        </details>
+    </div>
+
+</header>
+

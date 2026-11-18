@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Visualizar Produto | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+</head>
+
+<body x-data="{}">
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="form-intro">
+
+                    <div>
+                        <span class="section-label">DETALHES DO PRODUTO</span>
+                        <h2 th:text="${produto.descricao}">Produto</h2>
+                        <p>
+                            Consulte as informações do patrimônio cadastrado.
+                        </p>
+                    </div>
+
+                </section>
+
+                <section class="form-panel">
+
+                    <div class="form-section">
+
+                        <div class="form-section-title">
+                            <span>01</span>
+
+                            <div>
+                                <h3>Identificação</h3>
+                                <p>Dados principais do patrimônio.</p>
+                            </div>
+
+                            <div class="ml-auto flex flex-wrap justify-end gap-3">
+                                <a th:href="@{/produtos}" class="button-cancel">Voltar para produtos</a>
+                                <a th:href="@{/cadastro-produto}" class="button-success">Cadastrar novo produto</a>
+                                <button type="button"
+        class="button-save disabled:opacity-50 disabled:cursor-not-allowed"
+        th:data-id="${produto.id}"
+        th:disabled="${produto.status != 'AGUARDANDO_COLETA'}"
+        x-data="coletaProduto()"
+        @click="confirmar">
+    Marcar como coletado
+</button>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label>Patrimônio</label>
+                                <p th:text="${produto.patrimonio}">-</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Status</label>
+                                <p th:text="${produto.status}">-</p>
+                            </div>
+
+                            <div class="form-group form-group-full">
+                                <label>Descrição</label>
+                                <p th:text="${produto.descricao}">-</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-section">
+
+                        <div class="form-section-title">
+                            <span>02</span>
+
+                            <div>
+                                <h3>Informações do produto</h3>
+                                <p>Características do equipamento ou material.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <p th:text="${produto.categoria}">-</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Marca</label>
+                                <p th:text="${produto.marca}">-</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Modelo</label>
+                                <p th:text="${produto.modelo}">-</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Código EAN-13</label>
+
+                                <div
+                                    class="barcode-container" th:x-data="|codigoBarras('${produto.codigoBarras}')|"
+                                    x-init="init()"
+                                >
+                                    <svg x-ref="barcode"></svg>
+                                    <span class="barcode-number" th:text="${produto.codigoBarras}"></span>
+                                </div>
+
+                                
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-section">
+
+                        <div class="form-section-title">
+                            <span>03</span>
+
+                            <div>
+                                <h3>Observações</h3>
+                                <p>Informações complementares do item.</p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-sm leading-6 text-slate-700 whitespace-pre-wrap" th:text="${#strings.isEmpty(produto.observacoes) ? 'Nenhuma observação informada.' : produto.observacoes}">
+                                -
+                            </p>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                        <!-- DETALHES_COLETA_PRODUTO_V1 -->
+            <section th:if="${produto.status != 'PENDENTE'}"
+                     x-data="coletaDetalhesProduto()"
+                     x-init="carregar()"
+                     th:attr="data-patrimonio=${produto.patrimonio},data-status=${produto.status}"
+                     class="panel history-panel mb-6">
+                <div class="panel-header">
+                    <div>
+                        <span class="section-label">RASTREABILIDADE</span>
+                        <h3>Informacoes da coleta</h3>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p x-show="carregando" class="text-sm text-slate-500">Consultando os dados da coleta...</p>
+                    <p x-show="erro" x-text="erro" class="text-sm text-red-700" role="alert"></p>
+                    <p x-show="aguardando" class="text-sm text-slate-600">Equipamento aguardando retirada por uma empresa coletora.</p>
+                    <p x-show="semRegistro" class="text-sm text-slate-600">Nenhuma retirada vinculada a este equipamento. Se ele ja estiver coletado, confira o historico do registro.</p>
+                    <div x-show="temRegistro" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div><span class="block text-sm text-slate-500">Empresa coletora</span><strong x-text="nomeEmpresa" class="text-slate-800"></strong></div>
+                        <div><span class="block text-sm text-slate-500">Responsavel pela coleta</span><strong x-text="responsavel" class="text-slate-800"></strong></div>
+                        <div><span class="block text-sm text-slate-500">Data da retirada</span><strong x-text="dataRetirada" class="text-slate-800"></strong></div>
+                        <div><span class="block text-sm text-slate-500">Numero da retirada</span><strong x-text="numeroRetirada" class="text-slate-800"></strong></div>
+                        <div><span class="block text-sm text-slate-500">Telefone</span><strong x-text="telefone" class="text-slate-800"></strong></div>
+                        <div><span class="block text-sm text-slate-500">E-mail</span><strong x-text="email" class="text-slate-800"></strong></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+    <div th:replace="~{fragments/components :: components}"></div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

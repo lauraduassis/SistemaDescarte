@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head><link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Configurações | Sistema de Descarte</title><link rel="stylesheet" th:href="@{/css/app.css}"><script type="module" th:src="@{/js/app.js}"></script></head>
+<body x-data="{}"><div class="app-layout"><div th:replace="~{fragments/sidebar :: sidebar}"></div><div class="main-area"><div th:replace="~{fragments/header :: header}"></div><main class="content"><div class="perfil-pagina">
+<h2 class="text-3xl font-bold text-slate-800 mb-2">Configurações</h2><p class="text-slate-600 mb-6">Gerencie a segurança da sua conta.</p>
+<section class="perfil-cartao"><h3 class="text-xl font-semibold text-slate-800 mb-3">Alterar senha</h3>
+<p th:if="${erroPerfil}" class="perfil-mensagem erro" th:text="${erroPerfil}"></p><p th:if="${sucessoPerfil}" class="perfil-mensagem" th:text="${sucessoPerfil}"></p>
+<form method="post" th:action="@{/perfil/senha}"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+<div class="perfil-grid"><div class="perfil-campo"><label for="senhaAtualConfig">Senha atual</label><input id="senhaAtualConfig" type="password" name="senhaAtual" required autocomplete="current-password"></div>
+<div class="perfil-campo"><label for="senhaNovaConfig">Nova senha</label><input id="senhaNovaConfig" type="password" name="novaSenha" minlength="8" maxlength="72" required autocomplete="new-password"></div>
+<div class="perfil-campo"><label for="senhaConfConfig">Confirmar nova senha</label><input id="senhaConfConfig" type="password" name="confirmarSenha" minlength="8" maxlength="72" required autocomplete="new-password"></div></div>
+<p class="text-sm text-slate-500 mt-5">A senha deve ter de 8 a 72 caracteres. A função e as permissões permanecem inalteradas.</p>
+<div class="perfil-acoes"><button type="submit" class="perfil-acao">Atualizar senha</button><a th:href="@{/meu-perfil}" class="perfil-acao secundaria">Voltar ao perfil</a></div>
+</form></section></div></main><div th:replace="~{fragments/footer :: footer}"></div></div></div><div th:replace="~{fragments/components :: components}"></div></body></html>

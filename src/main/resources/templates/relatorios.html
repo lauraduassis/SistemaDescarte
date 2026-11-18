@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Relatórios | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+</head>
+
+<body x-data="{}">
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="reports-heading">
+                    <div>
+                        <span class="section-label">ANÁLISE DE DADOS</span>
+
+                        <h2 th:text="${tipoRelatorio == 'status' ? 'Relatório por Status' : (tipoRelatorio == 'por-status' ? 'Equipamentos por Status' : (tipoRelatorio == 'descartes' ? 'Relatório de Descarte de Equipamentos' : 'Relatórios'))}">Relatórios</h2>
+
+                        <p>
+                            Consulte os registros de descarte por período,
+                            patrimônio e status.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="status-report" th:if="${tipoRelatorio == 'status'}" x-data="paginacao()" data-busca-id="buscaResumoStatus" data-tipo-id="filtroResumoStatus">
+
+    <div class="status-report-header">
+        <div>
+            <span class="section-label">DISTRIBUIÇÃO POR STATUS</span>
+            <h3>Situação dos equipamentos</h3>
+            <p>Dados atualizados conforme os registros do sistema.</p>
+        </div>
+
+        <a th:href="@{/relatorios/status.pdf}"
+           target="_blank" rel="noopener"
+           aria-label="Imprimir relatorio por status em PDF"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #111;border-radius:10px;color:#111;font-weight:600;text-decoration:none;white-space:nowrap;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9V4h12v5"/>
+                <rect x="6" y="14" width="12" height="6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            </svg>
+            Imprimir PDF
+        </a>
+    </div>
+
+    <div class="status-report-body">
+
+        <div class="status-donut"
+             role="img"
+             aria-label="Distribuição de equipamentos por status"
+             th:style="|background: conic-gradient(#f59e0b 0% ${percentualPendentes}%, #2563eb ${percentualPendentes}% ${percentualPendentes + percentualColeta}%, #16a34a ${percentualPendentes + percentualColeta}% 100%)|">
+
+            <div class="status-donut-center">
+                <strong th:text="${totalRegistrado}">0</strong>
+                <span>Total</span>
+            </div>
+        </div>
+
+        <div class="status-report-legend">
+
+            <div class="status-legend-row">
+                <span class="status-legend-dot pending"></span>
+                <span class="status-legend-name">Pendente</span>
+                <strong th:text="${itensPendentes}">0</strong>
+                <span th:text="|${percentualPendentes}%|">0%</span>
+            </div>
+
+            <div class="status-legend-row">
+                <span class="status-legend-dot ready"></span>
+                <span class="status-legend-name">Aguardando coleta</span>
+                <strong th:text="${prontosParaColeta}">0</strong>
+                <span th:text="|${percentualColeta}%|">0%</span>
+            </div>
+
+            <div class="status-legend-row">
+                <span class="status-legend-dot collected"></span>
+                <span class="status-legend-name">Coletado</span>
+                <strong th:text="${itensColetados}">0</strong>
+                <span th:text="|${percentualColetados}%|">0%</span>
+            </div>
+
+        </div>
+    </div>
+
+    <section class="history-toolbar">
+
+    <div class="history-search">
+        <label for="buscaResumoStatus">Buscar</label>
+        <input type="search"
+               id="buscaResumoStatus"
+               placeholder="Buscar status">
+    </div>
+
+    <div class="history-filter">
+        <label for="filtroResumoStatus">Status</label>
+
+        <div class="select-premium-field" x-data="selectPremium">
+            <select id="filtroResumoStatus" class="select-premium">
+                <option value="">Todos</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="AGUARDANDO_COLETA">Aguardando coleta</option>
+                <option value="COLETADO">Coletado</option>
+            </select>
+        </div>
+    </div>
+
+</section>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th aria-sort="none">
+                    <button type="button"
+                            class="table-sort-button"
+                            data-sort-key="status"
+                            data-sort-index="0"
+                            data-sort-direction="none">
+                        <span>Status</span>
+                        <span class="table-sort-arrows" aria-hidden="true">
+                            <span class="sort-arrow-up">▲</span>
+                            <span class="sort-arrow-down">▼</span>
+                        </span>
+                    </button>
+                </th>
+
+                <th aria-sort="none">
+                    <button type="button"
+                            class="table-sort-button"
+                            data-sort-key="quantidade"
+                            data-sort-index="1"
+                            data-sort-direction="none">
+                        <span>Quantidade</span>
+                        <span class="table-sort-arrows" aria-hidden="true">
+                            <span class="sort-arrow-up">▲</span>
+                            <span class="sort-arrow-down">▼</span>
+                        </span>
+                    </button>
+                </th>
+
+                <th aria-sort="none">
+                    <button type="button"
+                            class="table-sort-button"
+                            data-sort-key="percentual"
+                            data-sort-index="2"
+                            data-sort-direction="none">
+                        <span>Percentual</span>
+                        <span class="table-sort-arrows" aria-hidden="true">
+                            <span class="sort-arrow-up">▲</span>
+                            <span class="sort-arrow-down">▼</span>
+                        </span>
+                    </button>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr data-paginacao-item data-tipo="PENDENTE">
+                <td>Pendente</td>
+                <td th:text="${itensPendentes}">0</td>
+                <td th:text="|${percentualPendentes}%|">0%</td>
+            </tr>
+
+            <tr data-paginacao-item data-tipo="AGUARDANDO_COLETA">
+                <td>Aguardando coleta</td>
+                <td th:text="${prontosParaColeta}">0</td>
+                <td th:text="|${percentualColeta}%|">0%</td>
+            </tr>
+
+            <tr data-paginacao-item data-tipo="COLETADO">
+                <td>Coletado</td>
+                <td th:text="${itensColetados}">0</td>
+                <td th:text="|${percentualColetados}%|">0%</td>
+            </tr>
+
+            <tr class="empty-row history-filter-empty"
+                style="display:none;">
+                <td colspan="3">
+                    <div class="empty-state">
+                        <strong>Nenhum status encontrado</strong>
+                        <span>
+                            Nenhum registro corresponde aos filtros.
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+
+        <tfoot>
+            <tr class="status-total-row">
+                <td><strong>Total geral</strong></td>
+                <td><strong th:text="${totalRegistrado}">0</strong></td>
+                <td th:text="${totalRegistrado == 0 ? '0%' : '100%'}">
+                    100%
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="history-pagination">
+
+    <span class="history-count" x-text="textoRegistros">
+        0 registros
+    </span>
+
+    <div class="history-pagination-controls">
+
+        <label for="itensPorPaginaResumoStatus">
+            Itens por página
+        </label>
+
+        <select id="itensPorPaginaResumoStatus"
+                x-on:change="alterarQuantidade">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+        </select>
+
+        <button type="button"
+                x-on:click="paginaAnterior"
+                x-bind:disabled="estaNaPrimeiraPagina"
+                aria-label="Página anterior">
+            &#8249;
+        </button>
+
+        <span x-text="textoPagina">1 de 1</span>
+
+        <button type="button"
+                x-on:click="proximaPagina"
+                x-bind:disabled="estaNaUltimaPagina"
+                aria-label="Próxima página">
+            &#8250;
+        </button>
+
+    </div>
+</div>
+
+</section>
+                <div th:if="${tipoRelatorio == 'por-status'}"
+     x-data="paginacao()"
+     data-busca-id="buscaRelatorioStatus"
+     data-periodo-id="periodoRelatorioStatus">
+
+    <section class="history-toolbar">
+
+        <div class="history-search">
+            <label for="buscaRelatorioStatus">Buscar</label>
+            <input type="search"
+                   id="buscaRelatorioStatus"
+                   placeholder="Equipamento, patrimônio, categoria ou marca">
+        </div>
+
+        
+
+        <div class="history-filter">
+            <label for="periodoRelatorioStatus">Período de cadastro</label>
+
+            <div class="select-premium-field" x-data="selectPremium">
+                <select id="periodoRelatorioStatus"
+                        class="select-premium">
+                    <option value="">Todo o período</option>
+                    <option value="HOJE">Hoje</option>
+                    <option value="7_DIAS">Últimos 7 dias</option>
+                    <option value="30_DIAS">Últimos 30 dias</option>
+                </select>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="panel history-panel dynamic-status-panel reports-panel">
+
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div>
+                <span class="section-label">REGISTROS</span>
+
+                <h3 th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(statusRelatorioAtual, '_', ' ')))}">
+                    Equipamentos por Status
+                </h3>
+            </div>
+        
+        <a th:href="@{/relatorios/por-status.pdf(status=${statusRelatorioAtual})}"
+   target="_blank" rel="noopener"
+   aria-label="Imprimir equipamentos do status selecionado em PDF"
+   style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #111;border-radius:10px;color:#111;font-weight:600;text-decoration:none;white-space:nowrap;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9V4h12v5"/><rect x="6" y="14" width="12" height="6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+    </svg>
+    Imprimir PDF
+</a>
+</div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th aria-sort="none">
+                            <button type="button" class="table-sort-button"
+                                    data-sort-key="patrimonio" data-sort-index="0"
+                                    data-sort-direction="none">
+                                <span>Patrimônio</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th aria-sort="none">
+                            <button type="button" class="table-sort-button"
+                                    data-sort-key="equipamento" data-sort-index="1"
+                                    data-sort-direction="none">
+                                <span>Equipamento</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th aria-sort="none">
+                            <button type="button" class="table-sort-button"
+                                    data-sort-key="categoria" data-sort-index="2"
+                                    data-sort-direction="none">
+                                <span>Categoria</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th aria-sort="none">
+                            <button type="button" class="table-sort-button"
+                                    data-sort-key="marca" data-sort-index="3"
+                                    data-sort-direction="none">
+                                <span>Marca</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th aria-sort="none">
+                            <button type="button" class="table-sort-button"
+                                    data-sort-key="data"
+                                    data-sort-direction="none">
+                                <span>Data de cadastro</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>Status atual</th>
+                        <th th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">Ações</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr th:each="produto : ${produtosStatus}"
+                        data-paginacao-item
+                        th:attr="data-data=${produto.dataCadastro}">
+
+                        <td th:text="${produto.patrimonio}">-</td>
+
+                        <td th:text="${produto.descricao}">-</td>
+
+                        <td th:text="${#strings.isEmpty(produto.categoria) ? 'Não informada' : produto.categoria}">
+                            -
+                        </td>
+
+                        <td th:text="${#strings.isEmpty(produto.marca) ? 'Não informada' : produto.marca}">
+                            -
+                        </td>
+
+                        <td th:text="${produto.dataCadastro == null ? '-' : #temporals.format(produto.dataCadastro, 'dd/MM/yyyy HH:mm')}">
+                            -
+                        </td>
+
+                        <td th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(produto.status, '_', ' ')))}">
+                            -
+                        </td>
+
+                        <td th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">
+                            <a th:href="@{/produtos/{id}/visualizar(id=${produto.id})}"
+                               class="report-view-premium">
+<svg width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>
+<span>Visualizar</span>
+</a>
+                        </td>
+                    </tr>
+
+                    <tr class="empty-row history-filter-empty"
+                        style="display: none;">
+                        <td th:colspan="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO' ? 7 : 6}">
+                            <div class="empty-state">
+                                <strong>Nenhum equipamento encontrado</strong>
+                                <span>
+                                    Não existem registros correspondentes aos filtros.
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="history-pagination">
+
+            <span class="history-count"
+                  x-text="textoRegistros">
+                0 registros
+            </span>
+
+            <div class="history-pagination-controls">
+
+                <label for="itensPorPaginaRelatorio">
+                    Itens por página
+                </label>
+
+                <select id="itensPorPaginaRelatorio"
+                        x-on:change="alterarQuantidade">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+
+                <button type="button"
+                        x-on:click="paginaAnterior"
+                        x-bind:disabled="estaNaPrimeiraPagina"
+                        aria-label="Página anterior">
+                    &#8249;
+                </button>
+
+                <span x-text="textoPagina">1 de 1</span>
+
+                <button type="button"
+                        x-on:click="proximaPagina"
+                        x-bind:disabled="estaNaUltimaPagina"
+                        aria-label="Próxima página">
+                    &#8250;
+                </button>
+
+            </div>
+        </div>
+
+    </section>
+</div>
+
+<section class="panel reports-discard-panel"
+         th:if="${tipoRelatorio == 'descartes'}">
+
+    <div class="panel-header">
+        <div>
+            <span class="section-label">RELATÓRIO DE DESCARTES</span>
+            <h3>Descartes registrados</h3>
+        </div>
+
+        <span class="reports-count"
+              th:text="|${#lists.size(descartes)} registros|">
+            0 registros
+        </span>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data e hora</th>
+                    <th>Patrimônio</th>
+                    <th>Equipamento</th>
+                    <th>Motivo</th>
+                    <th>Status atual</th>
+                    <th th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr th:each="item : ${descartes}">
+
+                    <td th:text="${#temporals.format(item.notaDescarte.dataHora, 'dd/MM/yyyy HH:mm')}">
+                        -
+                    </td>
+
+                    <td th:text="${item.produto.patrimonio}">
+                        -
+                    </td>
+
+                    <td th:text="${item.produto.descricao}">
+                        -
+                    </td>
+
+                    <td th:text="${item.notaDescarte.motivo}">
+                        -
+                    </td>
+
+                    <td th:text="${#strings.replace(item.produto.status, '_', ' ')}">
+                        -
+                    </td>
+
+                    <td th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">
+                        <a th:href="@{/produtos/{id}/visualizar(id=${item.produto.id})}"
+                           class="text-blue-600 font-semibold hover:underline">
+                            Visualizar
+                        </a>
+                    </td>
+
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(descartes)}" class="empty-row">
+                    <td th:colspan="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO' ? 6 : 5}">
+                        <div class="empty-state">
+                            <strong>Nenhum descarte registrado</strong>
+                            <span>
+                                Os registros de descarte aparecerão aqui
+                                quando forem cadastrados.
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
+<section th:if="${tipoRelatorio == 'visao-geral'}"
+         class="history-toolbar">
+
+    <div class="history-search">
+        <label for="buscaVisaoGeral">Buscar</label>
+
+        <input type="search"
+               id="buscaVisaoGeral"
+               placeholder="Produto, patrimônio, categoria ou marca">
+    </div>
+
+    <div class="history-filter">
+        <label for="statusVisaoGeral">Status</label>
+
+        <div class="select-premium-field" x-data="selectPremium">
+            <select id="statusVisaoGeral" class="select-premium">
+                <option value="">Todos</option>
+
+                <option th:each="codigo : ${statusRelatorios}"
+                        th:value="${codigo}"
+                        th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(codigo, '_', ' ')))}">
+                    Status
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="history-filter">
+        <label for="periodoVisaoGeral">Período</label>
+
+        <div class="select-premium-field" x-data="selectPremium">
+            <select id="periodoVisaoGeral" class="select-premium">
+                <option value="">Todo o período</option>
+                <option value="HOJE">Hoje</option>
+                <option value="7_DIAS">Últimos 7 dias</option>
+                <option value="30_DIAS">Últimos 30 dias</option>
+            </select>
+        </div>
+    </div>
+
+</section>
+
+                <section th:if="${tipoRelatorio != 'status' and tipoRelatorio != 'descartes' and tipoRelatorio != 'por-status'}" class="stats-grid reports-stats">
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Itens pendentes</span>
+
+                            <div class="stat-icon pending">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <path d="M12 7v5l3 2"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <strong th:text="${itensPendentes}">--</strong>
+                        <p>Aguardando processo de descarte</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Prontos para coleta</span>
+
+                            <div class="stat-icon ready">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <path d="m8 12 2.5 2.5L16 9"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <strong th:text="${prontosParaColeta}">--</strong>
+                        <p>Itens liberados para retirada</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Itens coletados</span>
+
+                            <div class="stat-icon collected">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-hidden="true">
+                                    <path d="M5 8.5 12 5l7 3.5v7L12 19l-7-3.5z"/>
+                                    <path d="M5 8.5 12 12l7-3.5M12 12v7"/>
+                                    <path d="m9 7 3 1.5L15 7"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <strong th:text="${itensColetados}">--</strong>
+                        <p>Movimentações concluídas</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Total registrado</span>
+
+                            <div class="stat-icon total">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-hidden="true">
+                                    <rect x="5" y="4" width="14" height="16" rx="2"/>
+                                    <path d="M8 8h8M8 12h8M8 16h5"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <strong th:text="${totalRegistrado}">--</strong>
+                        <p>Patrimônios no sistema</p>
+                    </article>
+
+                </section>
+
+                <section th:if="${tipoRelatorio == 'visao-geral'}"
+         class="panel history-panel reports-panel"
+         x-data="paginacao()"
+         data-busca-id="buscaVisaoGeral"
+         data-tipo-id="statusVisaoGeral"
+         data-periodo-id="periodoVisaoGeral">
+
+    <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div>
+        <span class="section-label">REGISTROS</span>
+        <h3>Equipamentos registrados</h3>
+    </div>
+
+    <a th:href="@{/relatorios/visao-geral.pdf}"
+           target="_blank" rel="noopener"
+           aria-label="Imprimir relatorio geral em PDF"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1.5px solid #111;border-radius:10px;color:#111;font-weight:600;text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9V4h12v5"/>
+                <rect x="6" y="14" width="12" height="6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            </svg>
+            Imprimir PDF
+        </a>
+</div>
+<div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th aria-sort="none">
+                        <button type="button"
+                                class="table-sort-button"
+                                data-sort-key="patrimonio"
+                                data-sort-index="0"
+                                data-sort-direction="none">
+                            <span>Patrimônio</span>
+                            <span class="table-sort-arrows" aria-hidden="true">
+                                <span class="sort-arrow-up">▲</span>
+                                <span class="sort-arrow-down">▼</span>
+                            </span>
+                        </button>
+                    </th>
+
+                    <th aria-sort="none">
+                        <button type="button"
+                                class="table-sort-button"
+                                data-sort-key="produto"
+                                data-sort-index="1"
+                                data-sort-direction="none">
+                            <span>Produto</span>
+                            <span class="table-sort-arrows" aria-hidden="true">
+                                <span class="sort-arrow-up">▲</span>
+                                <span class="sort-arrow-down">▼</span>
+                            </span>
+                        </button>
+                    </th>
+
+                    <th aria-sort="none">
+                        <button type="button"
+                                class="table-sort-button"
+                                data-sort-key="data"
+                                data-sort-direction="none">
+                            <span>Data de cadastro</span>
+                            <span class="table-sort-arrows" aria-hidden="true">
+                                <span class="sort-arrow-up">▲</span>
+                                <span class="sort-arrow-down">▼</span>
+                            </span>
+                        </button>
+                    </th>
+
+                    <th aria-sort="none">
+                        <button type="button"
+                                class="table-sort-button"
+                                data-sort-key="status"
+                                data-sort-index="3"
+                                data-sort-direction="none">
+                            <span>Status</span>
+                            <span class="table-sort-arrows" aria-hidden="true">
+                                <span class="sort-arrow-up">▲</span>
+                                <span class="sort-arrow-down">▼</span>
+                            </span>
+                        </button>
+                    </th>
+
+                    <th>Coletado por</th>
+                    <th th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr th:each="produto : ${produtosVisaoGeral}"
+                    th:with="coleta=${produto.status == 'COLETADO' ? responsaveisColeta[produto.id] : null}"
+                    data-paginacao-item
+                    th:attr="data-tipo=${produto.status},data-data=${produto.dataCadastro}">
+
+                    <td th:text="${produto.patrimonio}">-</td>
+
+                    <td>
+                        <strong th:text="${produto.descricao}">Equipamento</strong>
+
+                        <div class="text-xs text-slate-500"
+                             th:text="|${produto.categoria ?: ''} ${produto.marca ?: ''}|">
+                            Categoria e marca
+                        </div>
+                    </td>
+
+                    <td th:text="${produto.dataCadastro == null ? '-' : #temporals.format(produto.dataCadastro, 'dd/MM/yyyy HH:mm')}">
+                        -
+                    </td>
+
+                    <td th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(produto.status, '_', ' ')))}">
+                        -
+                    </td>
+
+                    <td>
+                        <span th:if="${coleta == null}">&mdash;</span>
+                        <div th:if="${coleta != null}">
+                            <strong th:text="${#strings.isEmpty(coleta.nome()) ? 'Não informado' : coleta.nome()}"></strong>
+                            <div class="text-xs text-slate-500" th:text="${coleta.empresa()}"></div>
+                        </div>
+                    </td>
+
+                    <td th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}">
+                        <a th:href="@{/produtos/{id}/visualizar(id=${produto.id})}"
+                           class="report-view-premium">
+<svg width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>
+<span>Visualizar</span>
+</a>
+                    </td>
+                </tr>
+
+                <tr class="empty-row history-filter-empty"
+                    style="display: none;">
+                    <td th:colspan="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO' ? 6 : 5}">
+                        <div class="empty-state">
+                            <strong>Nenhum registro encontrado</strong>
+                            <span>
+                                Não existem equipamentos correspondentes aos filtros.
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="history-pagination">
+        <span class="history-count"
+              x-text="textoRegistros">
+            0 registros
+        </span>
+
+        <div class="history-pagination-controls">
+            <label for="itensPorPaginaVisaoGeral">
+                Itens por página
+            </label>
+
+            <select id="itensPorPaginaVisaoGeral"
+                    x-on:change="alterarQuantidade">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+
+            <button type="button"
+                    x-on:click="paginaAnterior"
+                    x-bind:disabled="estaNaPrimeiraPagina"
+                    aria-label="Página anterior">
+                &#8249;
+            </button>
+
+            <span x-text="textoPagina">1 de 1</span>
+
+            <button type="button"
+                    x-on:click="proximaPagina"
+                    x-bind:disabled="estaNaUltimaPagina"
+                    aria-label="Próxima página">
+                &#8250;
+            </button>
+        </div>
+    </div>
+</section>
+
+            </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

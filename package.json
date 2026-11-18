@@ -1,0 +1,19 @@
+{
+  "name": "sistema_descarte",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@alpinejs/csp": "^3.17.4",
+    "jsbarcode": "^3.12.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.4"
+  }
+}

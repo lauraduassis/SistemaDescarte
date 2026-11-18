@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Coletas | Sistema de Descarte</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+</head>
+<body x-data="consultaColetas()">
+<div class="app-layout">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="main-area">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <main class="content">
+            <section class="mb-8">
+                <span class="text-sm font-semibold uppercase tracking-wider text-blue-600">RASTREABILIDADE</span>
+                <h2 class="mt-2 text-3xl font-bold text-slate-800">Consultar coletas por patrimonio</h2>
+                <p class="mt-2 text-slate-600">Identifique a empresa responsavel e a data da retirada de um equipamento.</p>
+            </section>
+            <section class="bg-white rounded-xl shadow border border-slate-200 p-6 mb-6">
+                <form @submit.prevent="buscar()" class="flex flex-wrap items-end gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full"><div class="min-w-0">
+        <label class="block font-semibold mb-2" for="buscaProdutoColeta">Buscar produto ou patrimonio</label>
+        <input id="buscaProdutoColeta" style="border-radius: 0.5rem;" type="search" x-model="termo" x-on:input="atualizarBusca()"
+               maxlength="80" autocomplete="off"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2"
+               placeholder="Digite o nome, patrimonio ou codigo de barras">
+        <p class="text-sm text-slate-500 mt-2" x-text="mensagemBusca"></p>
+        </div><div x-data="selectPremium()" class="select-premium-field min-w-0">
+            <label class="block font-semibold mb-2" for="produtoSelecionadoColeta">Equipamento encontrado</label>
+            <select id="produtoSelecionadoColeta" x-model="produtoId" x-on:change="selecionarProduto()"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                <option value="">Selecione o equipamento pelo nome e patrimonio</option>
+                <template x-for="opcao in equipamentosEncontrados" :key="opcao.id">
+                    <option :value="opcao.id" x-text="opcao.rotulo"></option>
+                </template>
+            </select>
+        </div>
+    </div>
+    <button type="submit"
+        :disabled="carregando || !produtoId"
+        class="user-form-save-button btn-consultar-coletas">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="18" height="18"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+    </svg>
+
+    <span>Consultar</span>
+</button>
+</form>
+                <p x-show="erro" x-text="erro" role="alert" class="text-red-700 text-sm mt-3"></p>
+            </section>
+            <section class="panel history-panel">
+                <div class="panel-header">
+                    <div><span class="section-label">REGISTROS</span><h3>Coletas encontradas</h3></div>
+                </div>
+                <div class="table-wrapper overflow-x-auto">
+                    <table>
+                        <thead><tr>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('retiradaId')"
+                                        :data-sort-direction="colunaOrdenacao === 'retiradaId' ? direcaoOrdenacao : 'none'">
+                                    <span>Retirada</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('patrimonio')"
+                                        :data-sort-direction="colunaOrdenacao === 'patrimonio' ? direcaoOrdenacao : 'none'">
+                                    <span>Patrim&ocirc;nio</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('descricao')"
+                                        :data-sort-direction="colunaOrdenacao === 'descricao' ? direcaoOrdenacao : 'none'">
+                                    <span>Produto</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('empresaColetora')"
+                                        :data-sort-direction="colunaOrdenacao === 'empresaColetora' ? direcaoOrdenacao : 'none'">
+                                    <span>Empresa</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('responsavelColeta')"
+                                        :data-sort-direction="colunaOrdenacao === 'responsavelColeta' ? direcaoOrdenacao : 'none'">
+                                    <span>Respons&aacute;vel</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('telefone')"
+                                        :data-sort-direction="colunaOrdenacao === 'telefone' ? direcaoOrdenacao : 'none'">
+                                    <span>Telefone</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('email')"
+                                        :data-sort-direction="colunaOrdenacao === 'email' ? direcaoOrdenacao : 'none'">
+                                    <span>E-mail</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                            <th aria-sort="none">
+                                <button type="button" class="table-sort-button"
+                                        @click="ordenar('dataHora')"
+                                        :data-sort-direction="colunaOrdenacao === 'dataHora' ? direcaoOrdenacao : 'none'">
+                                    <span>Data</span>
+                                    <span class="table-sort-arrows" aria-hidden="true">
+                                        <span class="sort-arrow-up">&#9650;</span>
+                                        <span class="sort-arrow-down">&#9660;</span>
+                                    </span>
+                                </button>
+                            </th>
+                        </tr></thead>
+                        <tbody>
+                            <template x-for="registro in registrosPaginados" :key="registro.retiradaId">
+                                <tr>
+                                    <td x-text="registro.retiradaId"></td>
+                                    <td x-text="registro.patrimonio"></td>
+                                    <td x-text="registro.descricao"></td>
+                                    <td x-text="registro.empresaColetora"></td>
+                                    <td x-text="registro.responsavelColeta"></td>
+                                    <td x-text="registro.telefone"></td>
+                                    <td x-text="registro.email"></td>
+                                    <td x-text="formatarData(registro.dataHora)"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="carregando"><td colspan="8">Carregando coletas...</td></tr>
+                            <tr x-show="!carregando &amp;&amp; pesquisado &amp;&amp; registros.length === 0">
+                                <td colspan="8">Nenhuma coleta registrada para este equipamento.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="history-pagination">
+                    <span class="history-count" x-text="textoRegistros">0 registros</span>
+                    <div class="history-pagination-controls">
+                        <label for="itensPorPaginaColetas">Itens por p&aacute;gina</label>
+                        <select id="itensPorPaginaColetas" x-on:change="alterarQuantidade">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <button type="button" x-on:click="paginaAnterior"
+                                x-bind:disabled="primeiraPagina" aria-label="Página anterior">&#8249;</button>
+                        <span x-text="textoPagina">1 de 1</span>
+                        <button type="button" x-on:click="proximaPagina"
+                                x-bind:disabled="ultimaPagina" aria-label="Próxima página">&#8250;</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</div>
+<div th:replace="~{fragments/components :: components}"></div>
+</body>
+</html>

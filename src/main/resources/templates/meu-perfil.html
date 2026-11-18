@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head><link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Meu Perfil | Sistema de Descarte</title><link rel="stylesheet" th:href="@{/css/app.css}"><script type="module" th:src="@{/js/app.js}"></script></head>
+<body x-data="{}"><div class="app-layout"><div th:replace="~{fragments/sidebar :: sidebar}"></div><div class="main-area"><div th:replace="~{fragments/header :: header}"></div><main class="content"><div class="perfil-pagina">
+<h2 class="text-3xl font-bold text-slate-800 mb-2">Meu Perfil</h2><p class="text-slate-600 mb-6">Informacoes da conta autenticada.</p>
+<section class="perfil-cartao"><div class="perfil-grid"><div class="perfil-campo"><span>Nome de usuario (login)</span><strong th:text="${perfilUsuario.usuario}">usuario</strong></div><div class="perfil-campo"><span>Funcao / permissao</span><strong th:text="${perfilUsuario.permissao}">ADMIN</strong></div><div class="perfil-campo"><span>Situacao</span><strong th:text="${perfilUsuario.ativo} ? 'Ativa' : 'Inativa'">Ativa</strong></div></div>
+<div class="perfil-acoes"><a th:href="@{/editar-perfil}" class="perfil-acao">Editar Perfil</a><a th:href="@{/configuracoes}" class="perfil-acao secundaria">Configuracoes e senha</a></div>
+<p class="text-sm text-slate-500 mt-5">O sistema nao possui nome completo, email ou telefone vinculados a esta conta. Permissoes sao administradas separadamente.</p></section>
+</div></main><div th:replace="~{fragments/footer :: footer}"></div></div></div><div th:replace="~{fragments/components :: components}"></div></body></html>

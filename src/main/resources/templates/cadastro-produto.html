@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title th:text="${modoEdicao} ? 'Editar Produto | Sistema de Descarte' : 'Cadastrar Produto | Sistema de Descarte'">Cadastrar Produto | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+
+<body x-data="produto()">
+
+    <div
+        id="dados-produto"
+        hidden
+        th:if="${modoEdicao}"
+        th:data-id="${produto.id}"
+        th:data-patrimonio="${produto.patrimonio}"
+        th:data-descricao="${produto.descricao}"
+        th:data-categoria="${produto.categoria}"
+        th:data-marca="${produto.marca}"
+        th:data-modelo="${produto.modelo}"
+        th:data-observacoes="${produto.observacoes}">
+    </div>
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="form-intro">
+
+                    <div>
+                        <span class="section-label" th:text="${modoEdicao} ? 'EDITAR REGISTRO' : 'NOVO REGISTRO'">NOVO REGISTRO</span>
+
+                        <h2>Identificação do patrimônio</h2>
+
+                        <p>
+                            Preencha os dados do item destinado ao processo de descarte.
+                            Posteriormente essas informações serão integradas ao banco de dados.
+                        </p>
+                    </div>
+
+                </section>
+
+                <section class="form-panel">
+
+                    <form @submit.prevent="salvar()">
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>01</span>
+
+                                <div>
+                                    <h3>Identificação</h3>
+                                    <p>Dados principais do patrimônio.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+
+                                <div class="form-group">
+                                    <label for="patrimonio">
+                                        Número do patrimônio
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="patrimonio"
+                                        name="patrimonio"
+                                        x-model="form.patrimonio"
+                                        placeholder="Ex.: 123456"
+                                    >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>02</span>
+
+                                <div>
+                                    <h3>Informações do produto</h3>
+                                    <p>Características do equipamento ou material.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+
+                                <div class="form-group form-group-full">
+                                    <label for="descricao">
+                                        Descrição do produto
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="descricao"
+                                        name="descricao"
+                                        x-model="form.descricao"
+                                        placeholder="Ex.: Monitor LCD 21 polegadas"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="categoria">
+                                        Categoria
+                                    </label>
+
+                                    <select id="categoria" name="categoria" x-model="form.categoria">
+                                        <option value="">Selecione</option>
+                                        <option>Computador</option>
+                                        <option>Monitor</option>
+                                        <option>Impressora</option>
+                                        <option>Periférico</option>
+                                        <option>Equipamento de rede</option>
+                                        <option>Outro</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="marca">
+                                        Marca
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="marca"
+                                        name="marca"
+                                        x-model="form.marca"
+                                        placeholder="Ex.: Dell"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="modelo">
+                                        Modelo
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="modelo"
+                                        name="modelo"
+                                        x-model="form.modelo"
+                                        placeholder="Ex.: P2219H"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="status">
+                                        Status
+                                    </label>
+
+                                    <select id="status" name="status">
+                                        <option value="PENDENTE">
+                                            Pendente
+                                        </option>
+                                    </select>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-section">
+
+                            <div class="form-section-title">
+                                <span>03</span>
+
+                                <div>
+                                    <h3>Observações</h3>
+                                    <p>Informações complementares do item.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="observacoes">
+                                    Observações
+                                </label>
+
+                                <textarea
+                                    id="observacoes"
+                                    name="observacoes"
+                                        x-model="form.observacoes"
+                                    rows="5"
+                                    placeholder="Informe detalhes relevantes sobre o equipamento..."
+                                ></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+
+                            <a href="/index" class="button-cancel">
+                                Cancelar
+                            </a>
+
+                            <button
+                                type="submit"
+                                class="button-save"
+                                :disabled="salvando"
+                            >
+                                <span th:text="${modoEdicao} ? 'Salvar alterações' : 'Salvar produto'">Salvar produto</span>
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+            </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+
+    <div th:replace="~{fragments/components :: components}"></div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

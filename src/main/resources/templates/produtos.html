@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Produtos | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+
+<body x-data="produto()">
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="products-heading">
+
+                    <div>
+                        <span class="section-label">GESTÃO DE PATRIMÔNIOS</span>
+                        <h2>Produtos</h2>
+                        <p>
+                            Consulte e gerencie os equipamentos e materiais cadastrados
+                            para o processo de descarte.
+                        </p>
+                    </div>
+
+                    <div class="products-heading-actions"
+     style="display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;">
+<a th:href="@{/produtos/etiquetas}"
+   class="products-print-button"
+   target="_blank"
+   rel="noopener"
+   style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 18px;background:#ffffff;border:1.5px solid #111111;border-radius:12px;color:#111111;font-weight:700;text-decoration:none;box-shadow:none;">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="18" height="18"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+        <path d="M6 9V4h12v5"/>
+        <rect x="6" y="14" width="12" height="6"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <path d="M17 13h.01"/>
+    </svg>
+
+    <span>Imprimir todas as etiquetas</span>
+</a>
+<a th:if="${permissao == 'ADMIN' or permissao == 'ALMOXARIFADO'}" th:href="@{/cadastro-produto}" class="primary-button products-new-button">
+                        + Cadastrar produto
+                    </a>
+</div>
+
+                </section>
+
+                <div x-data="paginacao()"
+     data-busca-id="buscaProdutosGlobal"
+     data-tipo-id="statusProdutosGlobal"
+     data-periodo-id="periodoProdutosGlobal">
+
+    <section class="history-toolbar">
+
+        <div class="history-search">
+            <label for="buscaProdutosGlobal">Buscar produto</label>
+
+            <input type="search"
+                   id="buscaProdutosGlobal"
+                   placeholder="Patrimônio, produto ou categoria">
+        </div>
+
+        <div class="history-filter">
+            <label for="statusProdutosGlobal">Status</label>
+
+            <div class="select-premium-field" x-data="selectPremium">
+                <select id="statusProdutosGlobal"
+                        class="select-premium">
+
+                    <option value="">Todos</option>
+
+                    <option th:each="codigo : ${statusRelatorios}"
+                            th:value="${codigo}"
+                            th:text="${#strings.capitalizeWords(#strings.toLowerCase(#strings.replace(codigo, '_', ' ')))}">
+                        Status
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="history-filter">
+            <label for="periodoProdutosGlobal">Período de cadastro</label>
+
+            <div class="select-premium-field" x-data="selectPremium">
+                <select id="periodoProdutosGlobal"
+                        class="select-premium">
+
+                    <option value="">Todo o período</option>
+                    <option value="HOJE">Hoje</option>
+                    <option value="7_DIAS">Últimos 7 dias</option>
+                    <option value="30_DIAS">Últimos 30 dias</option>
+                </select>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="panel history-panel products-panel">
+
+        <div class="panel-header">
+            <div>
+                <span class="section-label">REGISTROS</span>
+                <h3>Produtos cadastrados</h3>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+                <thead>
+                    <tr>
+
+                        <th>
+                            <button type="button"
+                                    class="table-sort-button"
+                                    data-sort-key="patrimonio"
+                                    data-sort-index="0"
+                                    data-sort-direction="none">
+                                <span>Patrimônio</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>
+                            <button type="button"
+                                    class="table-sort-button"
+                                    data-sort-key="produto"
+                                    data-sort-index="1"
+                                    data-sort-direction="none">
+                                <span>Produto</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>
+                            <button type="button"
+                                    class="table-sort-button"
+                                    data-sort-key="categoria"
+                                    data-sort-index="2"
+                                    data-sort-direction="none">
+                                <span>Categoria</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>
+                            <button type="button"
+                                    class="table-sort-button"
+                                    data-sort-key="status"
+                                    data-sort-index="3"
+                                    data-sort-direction="none">
+                                <span>Status</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>
+                            <button type="button"
+                                    class="table-sort-button"
+                                    data-sort-key="data"
+                                    data-sort-direction="none">
+                                <span>Cadastro</span>
+                                <span class="table-sort-arrows" aria-hidden="true">
+                                    <span class="sort-arrow-up">▲</span>
+                                    <span class="sort-arrow-down">▼</span>
+                                </span>
+                            </button>
+                        </th>
+
+                        <th>Última alteração</th>
+                        <th>Ações</th>
+
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr th:each="produto : ${produtos}"
+                        data-paginacao-item
+                        th:attr="data-data=${produto.dataCadastro},data-tipo=${produto.status}">
+
+                        <td th:text="${produto.patrimonio}">-</td>
+
+                        <td th:text="${produto.descricao}">-</td>
+
+                        <td th:text="${produto.categoria}">-</td>
+
+                        <td th:text="${produto.status}">-</td>
+
+                        <td th:text="${produto.dataCadastro != null ? #temporals.format(produto.dataCadastro, 'dd/MM/yyyy HH:mm') : '—'}">
+                            -
+                        </td>
+
+                        <td th:text="${produto.dataAtualizacao != null ? #temporals.format(produto.dataAtualizacao, 'dd/MM/yyyy HH:mm') : '—'}">
+                            -
+                        </td>
+
+                        <td>
+                            <div class="products-actions">
+
+                                <a class="product-view-button"
+                                   th:href="@{/produtos/{id}/visualizar(id=${produto.id})}">
+<svg class="product-action-icon"
+     width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>
+Visualizar
+</a>
+
+                                <button type="button"
+                                        class="product-edit-button"
+                                        @click="solicitarEdicao($el)"
+                                        th:data-id="${produto.id}">
+<svg class="product-action-icon"
+     width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>
+Editar
+</button>
+
+                                <button type="button"
+                                        class="product-delete-button"
+                                        @click="solicitarExclusao($el)"
+                                        th:data-id="${produto.id}">
+<svg class="product-action-icon"
+     width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M3 6h18"/>
+    <path d="M8 6V4h8v2"/>
+    <path d="M19 6l-1 14H6L5 6"/>
+    <path d="M10 10v6"/>
+    <path d="M14 10v6"/>
+</svg>
+Excluir
+</button>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="empty-row history-filter-empty"
+                        style="display: none;">
+                        <td colspan="7">
+
+                            <div class="empty-state">
+
+                                <div class="empty-icon">
+                                    <svg viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="1.8"
+                                         aria-hidden="true">
+                                        <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z"/>
+                                        <path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>
+                                    </svg>
+                                </div>
+
+                                <strong>Nenhum produto encontrado</strong>
+
+                                <span>
+                                    Nenhum equipamento corresponde aos filtros selecionados.
+                                </span>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+
+        <div class="history-pagination">
+
+            <span class="history-count"
+                  x-text="textoRegistros">
+                0 registros
+            </span>
+
+            <div class="history-pagination-controls">
+
+                <label for="itensPorPaginaProdutos">
+                    Itens por página
+                </label>
+
+                <select id="itensPorPaginaProdutos"
+                        x-on:change="alterarQuantidade">
+
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+
+                </select>
+
+                <button type="button"
+                        x-on:click="paginaAnterior"
+                        x-bind:disabled="estaNaPrimeiraPagina"
+                        aria-label="Página anterior">
+                    &#8249;
+                </button>
+
+                <span x-text="textoPagina">1 de 1</span>
+
+                <button type="button"
+                        x-on:click="proximaPagina"
+                        x-bind:disabled="estaNaUltimaPagina"
+                        aria-label="Próxima página">
+                    &#8250;
+                </button>
+
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+            </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+    <div th:replace="~{fragments/components :: components}"></div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

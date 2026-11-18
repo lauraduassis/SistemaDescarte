@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Histórico | Sistema de Descarte</title>
+
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script type="module" th:src="@{/js/app.js}"></script>
+</head>
+
+<body x-data="{}">
+
+    <div class="app-layout">
+
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <div class="main-area">
+
+            <div th:replace="~{fragments/header :: header}"></div>
+
+            <main class="content">
+
+                <section class="history-heading">
+                    <div>
+                        <span class="section-label">MOVIMENTAÇÕES</span>
+
+                        <h2>Histórico</h2>
+
+                        <p>
+                            Consulte as movimentações registradas no almoxarifado
+                            e acompanhe o histórico dos itens.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="history-toolbar">
+
+                    <div class="history-search">
+                        <label for="buscaHistorico">Buscar</label>
+
+                        <input
+                            type="search"
+                            id="buscaHistorico"
+                            placeholder="Produto, patrimônio ou observação"
+                        >
+                    </div>
+
+                    <div class="history-filter">
+                        <label for="tipoMovimentacao">Movimentação</label>
+
+                        <div class="select-premium-field" x-data="selectPremium">
+<select id="tipoMovimentacao" class="select-premium" data-options-from-table="true">
+                            <option value="">Todas</option>
+                            <option value="ENTRADA">Entrada</option>
+                            <option value="RETIRADA">Retirada</option>
+                            <option value="DESCARTE">Descarte</option>
+                        </select>
+</div>
+                    </div>
+
+                    <div class="history-filter">
+                        <label for="periodoHistorico">Período</label>
+
+                        <div class="select-premium-field" x-data="selectPremium">
+<select id="periodoHistorico" class="select-premium">
+                            <option value="">Todo o período</option>
+                            <option value="HOJE">Hoje</option>
+                            <option value="7_DIAS">Últimos 7 dias</option>
+                            <option value="30_DIAS">Últimos 30 dias</option>
+                        </select>
+</div>
+                    </div>
+
+                </section>
+
+                <section class="panel history-panel" x-data="paginacao()">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <span class="section-label">REGISTROS</span>
+                            <h3>Movimentações registradas</h3>
+                        </div>
+
+                    </div>
+
+                    <div class="table-wrapper">
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th aria-sort="none">
+    <button
+        type="button"
+        class="table-sort-button"
+        data-sort-key="data"
+        data-sort-direction="none"
+        aria-label="Ordenar por Data e hora"
+    >
+        <span>Data e hora</span>
+        <span class="table-sort-arrows" aria-hidden="true">
+            <span class="sort-arrow-up">&#9650;</span>
+            <span class="sort-arrow-down">&#9660;</span>
+        </span>
+    </button>
+</th>
+                                    <th aria-sort="none">
+    <button
+        type="button"
+        class="table-sort-button"
+        data-sort-key="tipo"
+        data-sort-direction="none"
+        aria-label="Ordenar por Movimentação"
+    >
+        <span>Movimentação</span>
+        <span class="table-sort-arrows" aria-hidden="true">
+            <span class="sort-arrow-up">&#9650;</span>
+            <span class="sort-arrow-down">&#9660;</span>
+        </span>
+    </button>
+</th>
+                                    <th aria-sort="none">
+    <button
+        type="button"
+        class="table-sort-button"
+        data-sort-key="produto"
+        data-sort-direction="none"
+        aria-label="Ordenar por Produto / Patrimônio"
+    >
+        <span>Produto / Patrimônio</span>
+        <span class="table-sort-arrows" aria-hidden="true">
+            <span class="sort-arrow-up">&#9650;</span>
+            <span class="sort-arrow-down">&#9660;</span>
+        </span>
+    </button>
+</th>
+                                    <th aria-sort="none">
+    <button
+        type="button"
+        class="table-sort-button"
+        data-sort-key="responsavel"
+        data-sort-direction="none"
+        aria-label="Ordenar por Responsável / Origem"
+    >
+        <span>Responsável / Origem</span>
+        <span class="table-sort-arrows" aria-hidden="true">
+            <span class="sort-arrow-up">&#9650;</span>
+            <span class="sort-arrow-down">&#9660;</span>
+        </span>
+    </button>
+</th>
+                                    <th aria-sort="none">
+    <button
+        type="button"
+        class="table-sort-button"
+        data-sort-key="observacao"
+        data-sort-direction="none"
+        aria-label="Ordenar por Observação"
+    >
+        <span>Observação</span>
+        <span class="table-sort-arrows" aria-hidden="true">
+            <span class="sort-arrow-up">&#9650;</span>
+            <span class="sort-arrow-down">&#9660;</span>
+        </span>
+    </button>
+</th>
+                                    <th th:if="${permissao != 'ANALISTA'}">Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                                                <tr th:each="item : ${movimentacoes}"
+    data-paginacao-item
+    data-tipo="DESCARTE"
+    th:attr="data-data=${item.notaDescarte.dataHora}">
+                                    <td th:text="${#temporals.format(item.notaDescarte.dataHora, 'dd/MM/yyyy HH:mm')}">
+                                        14/11/2026 11:54
+                                    </td>
+
+                                    <td>Descarte</td>
+
+                                    <td>
+                                        <strong th:text="${item.produto.descricao}">Produto</strong>
+                                        <span th:text="${item.produto.patrimonio}">Patrimônio</span>
+                                    </td>
+
+                                    <td>Não informado</td>
+
+                                    <td th:text="${item.notaDescarte.motivo}">
+                                        Motivo do descarte
+                                    </td>
+
+                                    <td th:if="${permissao != 'ANALISTA'}">
+    <div class="products-actions" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <a class="movement-view-button"
+           th:href="@{/produtos/{id}/visualizar(id=${item.produto.id})}">
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="15" height="15"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     aria-hidden="true">
+    <path d="M2.1 12a10 10 0 0 1 19.8 0 10 10 0 0 1-19.8 0Z"/>
+    <circle cx="12" cy="12" r="3"/>
+</svg>
+Visualizar
+</a>
+        <a class="movement-pdf-button"
+           th:href="@{/descartes/movimentacoes/{id}/relatorio.pdf(id=${item.id})}"
+           target="_blank" rel="noopener"
+           >
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9V4h12v5"/>
+                <rect x="6" y="14" width="12" height="6"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            </svg>
+            Imprimir PDF
+        </a>
+    </div>
+</td>
+                                </tr>
+                                <tr class="empty-row history-filter-empty"
+    th:if="${!#lists.isEmpty(movimentacoes)}"
+    style="display: none;">
+    <td th:colspan="${permissao == 'ANALISTA' ? 5 : 6}">
+        <div class="empty-state">
+            <strong>Nenhum resultado encontrado</strong>
+            <span>
+                Tente alterar a busca, a movimentação ou o período.
+            </span>
+        </div>
+    </td>
+</tr>
+<tr class="empty-row" th:if="${#lists.isEmpty(movimentacoes)}">
+                                    <td th:colspan="${permissao == 'ANALISTA' ? 5 : 6}">
+
+                                        <div class="empty-state">
+
+                                            <div class="empty-icon">
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="1.8"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path d="M12 8v4l2.5 2.5"/>
+                                                    <circle cx="12" cy="12" r="8"/>
+                                                    <path d="M8 3H4v4"/>
+                                                    <path d="M4.5 7A9.5 9.5 0 0 1 12 2.5"/>
+                                                </svg>
+                                            </div>
+
+                                            <strong>Nenhuma movimentação registrada</strong>
+
+                                            <span>
+                                                As entradas, retiradas e movimentações de descarte
+                                                serão exibidas aqui.
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    <div class="history-pagination">
+
+                        <span class="history-count" x-text="textoRegistros">
+                            0 registros
+                        </span>
+
+                        <div class="history-pagination-controls">
+
+                            <label for="itensPorPaginaHistorico">
+                                Itens por página
+                            </label>
+
+                            <select
+                                id="itensPorPaginaHistorico"
+                                x-on:change="alterarQuantidade"
+                            >
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+
+                            <button
+                                type="button"
+                                x-on:click="paginaAnterior"
+                                x-bind:disabled="estaNaPrimeiraPagina"
+                                aria-label="Página anterior"
+                            >
+                                &#8249;
+                            </button>
+
+                            <span x-text="textoPagina">1 de 1</span>
+
+                            <button
+                                type="button"
+                                x-on:click="proximaPagina"
+                                x-bind:disabled="estaNaUltimaPagina"
+                                aria-label="Próxima página"
+                            >
+                                &#8250;
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                </section>
+
+            </main>
+
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
